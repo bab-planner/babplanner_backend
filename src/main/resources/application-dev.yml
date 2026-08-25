@@ -1,0 +1,4 @@
+# 개발 서버 전용. 실제 문자를 보내지 않는다.
+bapplanner:
+  sms:
+    mode: noop

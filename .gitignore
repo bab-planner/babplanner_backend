@@ -9,9 +9,12 @@ bin/
 .env
 .env.*
 !.env.example
-application-local.yml
-application-local.yaml
+# application-local.yml 은 비밀 없는 공유 프로필이라 커밋한다.
+# 개발자 개인 설정은 아래 override 파일이나 .env 로 둔다.
+application-local-override.yml
+application-local-override.yaml
 application-secret*.yml
+application-secret*.yaml
 *.keystore
 *.jks
 *.p12

@@ -2,15 +2,14 @@ package com.babplanner.backend.auth.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /**
- * 사업자 연동 전까지 쓰는 기본 구현.
+ * 문자를 실제로 보내지 않는 구현.
  *
- * <p>발송을 시도하지 않는다. 이 구현이 없으면 애플리케이션이 기동하지 못하므로
- * 자리만 채운다. 인증번호는 어떤 로그 레벨로도 출력하지 않는다.
+ * <p>component scan 대상이 아니다. bapplanner.sms.mode=noop 을 명시한
+ * 로컬/개발/테스트 환경에서만 SmsConfig가 등록한다. 인증번호와 번호는 어떤
+ * 로그 레벨로도 출력하지 않는다.
  */
-@Component
 public class NoOpSmsSender implements SmsSender {
 
     private static final Logger log = LoggerFactory.getLogger(NoOpSmsSender.class);

@@ -54,7 +54,16 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/allergies")
+                        // OpenAPI에 security가 없는 공개 조회 endpoint.
+                        // 메서드를 GET으로 못박아 향후 쓰기 API가 딸려 열리지 않게 한다.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/menus",
+                                "/api/v1/menus/**",
+                                "/api/v1/congestion/current",
+                                "/api/v1/notices",
+                                "/api/v1/notices/**",
+                                "/api/v1/allergies")
                         .permitAll()
                         // 나머지는 bearerAuth 필요
                         .anyRequest()

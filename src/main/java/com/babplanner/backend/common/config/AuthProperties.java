@@ -27,6 +27,14 @@ public class AuthProperties {
      */
     private String signingKey;
 
+    /**
+     * 휴대폰 인증번호 HMAC 키. 최소 32바이트.
+     *
+     * <p>6자리 코드는 entropy가 낮아 평문 해시로는 보호되지 않는다.
+     * signingKey와 반드시 다른 값을 써야 한다.
+     */
+    private String phoneVerificationHmacKey;
+
     public Duration getAccessTokenTtl() {
         return accessTokenTtl;
     }
@@ -81,5 +89,13 @@ public class AuthProperties {
 
     public void setSigningKey(String signingKey) {
         this.signingKey = signingKey;
+    }
+
+    public String getPhoneVerificationHmacKey() {
+        return phoneVerificationHmacKey;
+    }
+
+    public void setPhoneVerificationHmacKey(String phoneVerificationHmacKey) {
+        this.phoneVerificationHmacKey = phoneVerificationHmacKey;
     }
 }

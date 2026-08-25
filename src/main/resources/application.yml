@@ -21,9 +21,15 @@ spring:
     default-property-inclusion: always
 
 bapplanner:
+  # SMS 구현을 명시적으로 고른다. 기본값을 두지 않아 운영에서 NoOp가
+  # 조용히 선택되는 일이 없다. 로컬/개발은 프로필 설정에서 noop을 켠다.
+  sms:
+    mode: ${SMS_MODE:}
   auth:
     # 실제 키는 환경 변수로만 주입한다. 기본값을 두지 않아 미설정 시 기동에 실패한다.
     signing-key: ${JWT_SIGNING_KEY:}
+    # JWT 서명 키와 다른 값이어야 한다. 미설정이면 기동에 실패한다.
+    phone-verification-hmac-key: ${PHONE_VERIFICATION_HMAC_KEY:}
     issuer: babplanner
     access-token-ttl: 30m
     refresh-token-ttl: 14d

@@ -17,9 +17,13 @@ spring:
     locations: classpath:db/migration
 
 bapplanner:
+  sms:
+    mode: noop
   auth:
     # 테스트 전용 가짜 키. 실제 서비스 키가 아니다.
     signing-key: test-only-signing-key-not-a-real-secret-0123456789
+    # 서명 키와 다른 테스트 전용 가짜 키.
+    phone-verification-hmac-key: test-only-phone-hmac-key-not-a-real-secret-98765
     issuer: babplanner
     access-token-ttl: 30m
     refresh-token-ttl: 14d

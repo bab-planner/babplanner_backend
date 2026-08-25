@@ -17,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * 모든 오류 응답을 OpenAPI ErrorEnvelope 하나로 통일한다.
@@ -62,8 +63,14 @@ public class GlobalExceptionHandler {
         return respond(ErrorCode.FORBIDDEN, null);
     }
 
-    @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNoHandler(NoHandlerFoundException exception) {
+    /**
+     * 매핑되지 않은 경로.
+     *
+     * <p>Spring 6.1부터 정적 리소스 조회 실패가 NoResourceFoundException으로
+     * 올라온다. 이걸 잡지 않으면 없는 URL이 500으로 응답된다.
+     */
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleNoHandler(Exception exception) {
         return respond(ErrorCode.NOT_FOUND, null);
     }
 

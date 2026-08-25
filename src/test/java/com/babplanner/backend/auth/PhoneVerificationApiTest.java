@@ -5,13 +5,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.babplanner.backend.auth.domain.PhoneVerification;
 import com.babplanner.backend.support.ApiIntegrationTest;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.babplanner.backend.auth.service.VerificationCodeHasher;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
+import java.util.HexFormat;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
 class PhoneVerificationApiTest extends ApiIntegrationTest {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private VerificationCodeHasher codeHasher;
 
     @Test
     @DisplayName("send-code가 성공 envelope와 TTL을 돌려준다")
@@ -120,6 +127,33 @@ class PhoneVerificationApiTest extends ApiIntegrationTest {
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
         assertThat(body(result).path("error").path("code").asText())
                 .isEqualTo("INVALID_VERIFICATION_CODE");
+    }
+
+    @Test
+    @DisplayName("저장된 code_hash는 평문 SHA-256이 아니다")
+    void codeHashIsNotPlainSha256() throws Exception {
+        postJson("/api/v1/auth/phone/send-code", Map.of("phone", PHONE));
+
+        String code = smsSender.lastCodeFor(PHONE);
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        String plainSha =
+                HexFormat.of().formatHex(digest.digest(code.getBytes(StandardCharsets.UTF_8)));
+
+        PhoneVerification saved = phoneVerificationRepository.findAll().getFirst();
+        // 6자리 코드는 전수 계산이 쉬워 키 없는 해시로는 보호되지 않는다.
+        assertThat(saved.getCodeHash()).isNotEqualTo(plainSha);
+    }
+
+    @Test
+    @DisplayName("같은 코드라도 번호가 다르면 저장 해시가 다르다")
+    void codeHashIsBoundToPhone() throws Exception {
+        postJson("/api/v1/auth/phone/send-code", Map.of("phone", PHONE));
+        String firstCode = smsSender.lastCodeFor(PHONE);
+        String firstHash = phoneVerificationRepository.findAll().getFirst().getCodeHash();
+
+        // 다른 번호로 같은 코드를 직접 해시해 비교한다.
+        assertThat(codeHasher.hash("01098765432", firstCode)).isNotEqualTo(firstHash);
+        assertThat(codeHasher.hash(PHONE, firstCode)).isEqualTo(firstHash);
     }
 
     @Test

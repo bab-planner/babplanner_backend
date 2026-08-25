@@ -18,24 +18,29 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 회원가입용 휴대폰 인증.
  *
- * <p>인증번호와 verificationToken 모두 원문을 저장하지 않고 SHA-256 해시만
- * 남긴다. 인증번호는 응답에 절대 포함하지 않으며 SmsSender로만 나간다.
+ * <p>인증번호와 verificationToken 모두 원문을 저장하지 않는다. 인증번호는
+ * entropy가 낮아 키가 들어간 HMAC({@link VerificationCodeHasher})으로,
+ * verificationToken은 entropy가 충분해 SHA-256으로 해시한다. 인증번호는
+ * 응답에 절대 포함하지 않으며 SmsSender로만 나간다.
  */
 @Service
 public class PhoneVerificationService {
 
     private final PhoneVerificationRepository repository;
     private final SmsSender smsSender;
+    private final VerificationCodeHasher codeHasher;
     private final AuthProperties properties;
     private final Clock clock;
 
     public PhoneVerificationService(
             PhoneVerificationRepository repository,
             SmsSender smsSender,
+            VerificationCodeHasher codeHasher,
             AuthProperties properties,
             Clock clock) {
         this.repository = repository;
         this.smsSender = smsSender;
+        this.codeHasher = codeHasher;
         this.properties = properties;
         this.clock = clock;
     }
@@ -55,7 +60,8 @@ public class PhoneVerificationService {
         Instant resendAvailableAt = now.plus(properties.getVerificationResendCooldown());
 
         repository.save(
-                new PhoneVerification(phone, Hashes.sha256(code), expiresAt, resendAvailableAt, now));
+                new PhoneVerification(
+                        phone, codeHasher.hash(phone, code), expiresAt, resendAvailableAt, now));
 
         // 코드 원문은 여기서만 흘러가고 어디에도 남지 않는다.
         smsSender.sendVerificationCode(phone, code);
@@ -75,7 +81,7 @@ public class PhoneVerificationService {
         if (verification.isCodeExpired(now)) {
             throw new ApiException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
-        if (!verification.getCodeHash().equals(Hashes.sha256(code))) {
+        if (!codeHasher.matches(phone, code, verification.getCodeHash())) {
             // 만료와 불일치를 같은 오류로 응답해 어떤 쪽인지 추측하기 어렵게 한다.
             throw new ApiException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
