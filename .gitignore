@@ -1,0 +1,35 @@
+# Build output
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.gradle/
+out/
+bin/
+
+# Secrets / local configuration (never commit)
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.yaml
+application-secret*.yml
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.crt
+
+# Logs
+logs/
+*.log
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+nbproject/

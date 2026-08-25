@@ -1,0 +1,82 @@
+package com.babplanner.backend.common.error;
+
+import com.babplanner.backend.common.api.ApiError;
+import com.babplanner.backend.common.api.ApiResponse;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+
+/**
+ * 모든 오류 응답을 OpenAPI ErrorEnvelope 하나로 통일한다.
+ *
+ * <p>스택 트레이스, JPA/SQL 예외 메시지, 검증 대상 값은 응답에 넣지 않는다.
+ * 검증 오류는 어떤 필드가 문제인지까지만 알려준다.
+ */
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException exception) {
+        return respond(exception.errorCode(), exception.details());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException exception) {
+        Map<String, String> fields = new TreeMap<>();
+        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
+            // 필드 이름과 제약 위반 메시지만 담는다. 입력 값 자체는 담지 않는다.
+            fields.putIfAbsent(error.getField(), error.getDefaultMessage());
+        }
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("fields", fields);
+        return respond(ErrorCode.VALIDATION_ERROR, details);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnreadable(HttpMessageNotReadableException exception) {
+        log.debug("요청 본문을 읽을 수 없음", exception);
+        return respond(ErrorCode.VALIDATION_ERROR, null);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException exception) {
+        return respond(ErrorCode.UNAUTHORIZED, null);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException exception) {
+        return respond(ErrorCode.FORBIDDEN, null);
+    }
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoHandler(NoHandlerFoundException exception) {
+        return respond(ErrorCode.NOT_FOUND, null);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception exception) {
+        // 원인은 서버 로그에만 남기고 응답에는 일반 문구만 내보낸다.
+        log.error("처리되지 않은 예외", exception);
+        return respond(ErrorCode.INTERNAL_ERROR, null);
+    }
+
+    private ResponseEntity<ApiResponse<Void>> respond(ErrorCode code, Object details) {
+        HttpStatus status = code.status();
+        ApiError error = new ApiError(code.name(), code.message(), details);
+        return ResponseEntity.status(status).body(ApiResponse.failure(error));
+    }
+}

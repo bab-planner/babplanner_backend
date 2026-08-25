@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:babplanner;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+bapplanner:
+  auth:
+    # 테스트 전용 가짜 키. 실제 서비스 키가 아니다.
+    signing-key: test-only-signing-key-not-a-real-secret-0123456789
+    issuer: babplanner
+    access-token-ttl: 30m
+    refresh-token-ttl: 14d
+    verification-code-ttl: 3m
+    verification-resend-cooldown: 60s
+    verification-token-ttl: 10m

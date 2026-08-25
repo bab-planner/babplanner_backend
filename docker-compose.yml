@@ -1,0 +1,18 @@
+# 로컬 개발용 MySQL. 운영 자격증명을 여기에 넣지 않는다.
+# 값은 셸 환경이나 .env(커밋 금지)에서 주입한다.
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: babplanner-mysql
+    environment:
+      MYSQL_DATABASE: babplanner
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?로컬 개발용 비밀번호를 환경 변수로 지정하세요}
+      MYSQL_USER: ${MYSQL_USER:?로컬 개발용 사용자명을 환경 변수로 지정하세요}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?로컬 개발용 비밀번호를 환경 변수로 지정하세요}
+    ports:
+      - "3306:3306"
+    volumes:
+      - babplanner-mysql-data:/var/lib/mysql
+
+volumes:
+  babplanner-mysql-data:
