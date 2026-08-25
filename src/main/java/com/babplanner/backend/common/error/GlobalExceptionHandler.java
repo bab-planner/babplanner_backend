@@ -14,6 +14,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -44,6 +46,29 @@ public class GlobalExceptionHandler {
         }
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("fields", fields);
+        return respond(ErrorCode.VALIDATION_ERROR, details);
+    }
+
+    /** 필수 query parameter 누락. 예: GET /menus 에 date가 없는 경우. */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingParameter(
+            MissingServletRequestParameterException exception) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("fields", Map.of(exception.getParameterName(), "필수 값입니다."));
+        return respond(ErrorCode.VALIDATION_ERROR, details);
+    }
+
+    /**
+     * query/path 값의 타입이나 enum이 계약과 다른 경우.
+     *
+     * <p>예: mealType=BRUNCH, date=not-a-date. 어떤 파라미터가 문제인지만
+     * 알려주고 입력 값 자체는 응답에 담지 않는다.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("fields", Map.of(exception.getName(), "값의 형식이 올바르지 않습니다."));
         return respond(ErrorCode.VALIDATION_ERROR, details);
     }
 

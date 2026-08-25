@@ -13,8 +13,8 @@ import org.springframework.test.web.servlet.MvcResult;
 /**
  * 공개 조회 endpoint가 인증 때문에 막히지 않는지 확인한다.
  *
- * <p>Menu/Congestion/Notice Controller는 아직 없으므로 401이 아니라 404가
- * 나와야 한다. 401이 나오면 security 정책이 OpenAPI와 어긋난 것이다.
+ * <p>인증으로 막히면(401/403) security 정책이 OpenAPI와 어긋난 것이다.
+ * 존재하지 않는 리소스는 404여야 하며, 이것은 정상 동작이다.
  */
 class PublicEndpointMatcherTest extends ApiIntegrationTest {
 
@@ -34,38 +34,40 @@ class PublicEndpointMatcherTest extends ApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /menus는 인증이 아니라 미구현으로 404다")
+    @DisplayName("GET /menus는 익명으로 접근된다")
     void menusListIsPublic() throws Exception {
-        assertNotBlockedByAuth("/api/v1/menus");
-        assertThat(getJson("/api/v1/menus").getResponse().getStatus()).isEqualTo(404);
+        assertNotBlockedByAuth("/api/v1/menus?date=2026-08-26");
+        assertThat(getJson("/api/v1/menus?date=2026-08-26").getResponse().getStatus())
+                .isEqualTo(200);
     }
 
     @Test
     @DisplayName("GET /menus/{id}도 인증으로 막히지 않는다")
     void menuDetailIsPublic() throws Exception {
-        assertNotBlockedByAuth("/api/v1/menus/1");
-        assertThat(getJson("/api/v1/menus/1").getResponse().getStatus()).isEqualTo(404);
+        // 없는 id여도 401이 아니라 404여야 공개 endpoint다.
+        assertNotBlockedByAuth("/api/v1/menus/999999");
+        assertThat(getJson("/api/v1/menus/999999").getResponse().getStatus()).isEqualTo(404);
     }
 
     @Test
-    @DisplayName("GET /congestion/current도 인증으로 막히지 않는다")
+    @DisplayName("GET /congestion/current도 익명으로 접근된다")
     void congestionIsPublic() throws Exception {
         assertNotBlockedByAuth("/api/v1/congestion/current");
-        assertThat(getJson("/api/v1/congestion/current").getResponse().getStatus()).isEqualTo(404);
+        assertThat(getJson("/api/v1/congestion/current").getResponse().getStatus()).isEqualTo(200);
     }
 
     @Test
-    @DisplayName("GET /notices도 인증으로 막히지 않는다")
+    @DisplayName("GET /notices도 익명으로 접근된다")
     void noticesListIsPublic() throws Exception {
         assertNotBlockedByAuth("/api/v1/notices");
-        assertThat(getJson("/api/v1/notices").getResponse().getStatus()).isEqualTo(404);
+        assertThat(getJson("/api/v1/notices").getResponse().getStatus()).isEqualTo(200);
     }
 
     @Test
     @DisplayName("GET /notices/{id}도 인증으로 막히지 않는다")
     void noticeDetailIsPublic() throws Exception {
-        assertNotBlockedByAuth("/api/v1/notices/1");
-        assertThat(getJson("/api/v1/notices/1").getResponse().getStatus()).isEqualTo(404);
+        assertNotBlockedByAuth("/api/v1/notices/999999");
+        assertThat(getJson("/api/v1/notices/999999").getResponse().getStatus()).isEqualTo(404);
     }
 
     @Test

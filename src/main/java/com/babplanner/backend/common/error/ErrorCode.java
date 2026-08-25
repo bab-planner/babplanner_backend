@@ -21,6 +21,9 @@ public enum ErrorCode {
 
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 정보를 찾을 수 없습니다."),
+    MENU_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 메뉴입니다."),
+    NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 공지사항입니다."),
+    CONGESTION_NOT_AVAILABLE(HttpStatus.NOT_FOUND, "현재 혼잡도 정보를 제공할 수 없습니다."),
 
     DUPLICATE_PHONE(HttpStatus.CONFLICT, "이미 가입된 휴대폰 번호입니다."),
     DUPLICATE_STUDENT_ID(HttpStatus.CONFLICT, "이미 가입된 학번입니다."),
