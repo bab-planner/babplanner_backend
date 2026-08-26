@@ -13,6 +13,8 @@ import com.babplanner.backend.reward.repository.CouponRepository;
 import com.babplanner.backend.reward.repository.RewardAccountRepository;
 import com.babplanner.backend.reward.repository.RewardTransactionRepository;
 import com.babplanner.backend.survey.repository.SurveyResponseRepository;
+import com.babplanner.backend.user.domain.Role;
+import com.babplanner.backend.user.domain.UserEntity;
 import com.babplanner.backend.user.repository.UserRepository;
 import com.babplanner.backend.waste.repository.WasteSubmissionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,6 +26,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -60,6 +63,7 @@ public abstract class ApiIntegrationTest {
     @Autowired protected SurveyResponseRepository surveyResponseRepository;
     @Autowired protected InquiryRepository inquiryRepository;
     @Autowired protected WasteSubmissionRepository wasteSubmissionRepository;
+    @Autowired protected PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void resetState() {
@@ -152,5 +156,36 @@ public abstract class ApiIntegrationTest {
 
     protected String accessTokenOf(JsonNode authData) {
         return authData.path("accessToken").asText();
+    }
+
+    protected static final String ADMIN_PHONE = "01055556666";
+    protected static final String ADMIN_STUDENT_ID = "20200001";
+
+    /**
+     * 관리자 계정을 만들고 로그인한다.
+     *
+     * <p>회원가입으로는 관리자를 만들 수 없으므로 저장소에 직접 넣는다. 그것이
+     * 이 제품의 실제 운영 방식이기도 하다.
+     */
+    protected JsonNode adminAuth() throws Exception {
+        return adminAuth(ADMIN_PHONE, ADMIN_STUDENT_ID);
+    }
+
+    protected JsonNode adminAuth(String phone, String studentId) throws Exception {
+        userRepository.save(new UserEntity(
+                "관리자",
+                phone,
+                studentId,
+                null,
+                Role.ADMIN,
+                passwordEncoder.encode(PASSWORD),
+                clock.instant()));
+        MvcResult result =
+                postJson("/api/v1/auth/login", Map.of("phone", phone, "password", PASSWORD));
+        return body(result).path("data");
+    }
+
+    protected String adminToken() throws Exception {
+        return accessTokenOf(adminAuth());
     }
 }

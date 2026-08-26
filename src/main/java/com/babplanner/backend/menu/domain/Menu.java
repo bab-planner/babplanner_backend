@@ -136,6 +136,56 @@ public class Menu {
         this.updatedAt = now;
     }
 
+    /**
+     * 전체 내용을 새 값으로 바꾼다.
+     *
+     * <p>PUT은 부분 수정이 아니라 전체 교체다. 요청에 없는 값은 유지하지 않고
+     * 비운다. 그러지 않으면 알레르기 성분 하나를 지우려 할 때 지울 방법이
+     * 없어진다.
+     *
+     * <p>id와 생성 시각은 바꾸지 않는다. 같은 식단을 계속 가리켜야 한다.
+     */
+    public void applyWrite(
+            DiningSite site,
+            LocalDate serviceDate,
+            MealType mealType,
+            MenuCategory category,
+            String name,
+            List<String> items,
+            String description,
+            String imageUrl,
+            Set<Allergy> allergies,
+            Instant now) {
+        this.site = site;
+        this.serviceDate = serviceDate;
+        this.mealType = mealType;
+        this.category = category;
+        this.name = name;
+        this.items.clear();
+        this.items.addAll(items);
+        this.description = description;
+        this.imageUrl = imageUrl;
+        this.allergies.clear();
+        this.allergies.addAll(allergies);
+        this.updatedAt = now;
+    }
+
+    /** 영양 정보. 값이 없으면 null로 둔다. 0으로 채우지 않는다. */
+    public void applyNutrition(
+            Integer caloriesKcal,
+            Double proteinG,
+            Double carbohydrateG,
+            Double fatG,
+            Integer sodiumMg,
+            Instant now) {
+        this.caloriesKcal = caloriesKcal;
+        this.proteinG = proteinG;
+        this.carbohydrateG = carbohydrateG;
+        this.fatG = fatG;
+        this.sodiumMg = sodiumMg;
+        this.updatedAt = now;
+    }
+
     public Long getId() {
         return id;
     }

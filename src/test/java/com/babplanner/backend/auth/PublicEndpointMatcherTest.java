@@ -106,6 +106,8 @@ class PublicEndpointMatcherTest extends ApiIntegrationTest {
         assertThat(getJson("/api/v1/admin/menus").getResponse().getStatus()).isEqualTo(401);
     }
 
+    private static final String SPLIT_NEWLINE = System.lineSeparator();
+
     @Test
     @DisplayName("SecurityConfig에 admin 경로를 permitAll로 두지 않는다")
     void adminIsNeverPermitted() throws IOException {
@@ -114,7 +116,16 @@ class PublicEndpointMatcherTest extends ApiIntegrationTest {
                         Path.of(
                                 "src/main/java/com/babplanner/backend/common/security/SecurityConfig.java"));
 
-        assertThat(source).doesNotContain("/api/v1/admin");
+        // 관리 경로는 역할을 요구하는 규칙에만 등장한다. 예전에는 admin이라는
+        // 문자열 자체를 금지했지만, 그건 관리 API가 없던 시절의 대용품이었다.
+        // 지금 지켜야 하는 것은 그 경로가 공개되지 않는다는 것이다.
+        assertThat(source).contains("\"/api/v1/admin/**\"");
+        assertThat(source).contains("hasRole(\"ADMIN\")");
+        for (String line : source.split(SPLIT_NEWLINE)) {
+            if (line.contains("permitAll")) {
+                assertThat(line).doesNotContain("admin");
+            }
+        }
         // 전체 경로를 통째로 여는 matcher도 없어야 한다.
         assertThat(source).doesNotContain("\"/api/v1/**\"");
         assertThat(source).doesNotContain("anyRequest().permitAll()");

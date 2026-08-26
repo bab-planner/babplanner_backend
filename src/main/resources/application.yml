@@ -34,6 +34,14 @@ bapplanner:
     password: ${DEV_USER_PASSWORD:}
     student-id: ${DEV_USER_STUDENT_ID:}
     name: ${DEV_USER_NAME:}
+  # 로컬 E2E용 관리자 fixture. 기본은 꺼져 있고 값도 없다.
+  # 회원가입으로는 관리자를 만들 수 없으므로 로컬 확인용으로만 쓴다.
+  dev-admin:
+    enabled: ${DEV_ADMIN_ENABLED:false}
+    phone: ${DEV_ADMIN_PHONE:}
+    password: ${DEV_ADMIN_PASSWORD:}
+    student-id: ${DEV_ADMIN_STUDENT_ID:}
+    name: ${DEV_ADMIN_NAME:}
   # 로컬 E2E용 설문 fixture. 기본은 꺼져 있다.
   dev-survey:
     enabled: ${DEV_SURVEY_ENABLED:false}

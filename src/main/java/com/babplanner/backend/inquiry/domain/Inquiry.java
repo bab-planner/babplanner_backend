@@ -68,6 +68,26 @@ public class Inquiry {
         this.updatedAt = now;
     }
 
+    /** 상태를 바꾼다. 요청이 보냈을 때만 부른다. */
+    public void changeStatus(InquiryStatus status, Instant now) {
+        this.status = status;
+        this.updatedAt = now;
+    }
+
+    /**
+     * 답변을 쓰거나 지운다.
+     *
+     * <p>답변을 썼다고 상태를 자동으로 ANSWERED로 바꾸지 않는다. 답변을 적어
+     * 두고 아직 검토 중일 수 있고, 상태는 관리자가 명시적으로 정하는 값이다.
+     */
+    public void applyAnswer(String adminAnswer, Instant now) {
+        this.adminAnswer = adminAnswer;
+        // 답변이 없어지면 답변 시각도 없어진다. 남겨 두면 "답변했는데 내용이
+        // 없다"는 상태가 된다.
+        this.answeredAt = adminAnswer == null ? null : now;
+        this.updatedAt = now;
+    }
+
     public Long getId() {
         return id;
     }

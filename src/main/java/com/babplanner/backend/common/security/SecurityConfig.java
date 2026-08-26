@@ -21,6 +21,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *
  * <p>OpenAPI의 security 정의를 그대로 옮긴다. /api/v1/** 전체를 인증 필수로
  * 묶지 않는다. 공개 endpoint는 명시적으로 허용한다.
+ *
+ * <p>권한 판단은 여기서만 한다. 컨트롤러가 각자 principal을 보고 판단하면
+ * 규칙이 흩어지고, 한 곳을 빠뜨렸을 때 그 endpoint만 조용히 열린다.
+ *
+ * <p>역할의 출처는 검증된 JWT claim뿐이다. 요청 본문이나 헤더로 들어온
+ * role 값은 쓰지 않는다.
  */
 @Configuration
 @EnableWebSecurity
@@ -45,6 +51,14 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 관리자 전용. 아래 공개 규칙보다 먼저 둔다. 나중에
+                        // 공개 규칙이 늘어나다 admin 경로까지 걸리면 관리 API가
+                        // 통째로 열린다.
+                        //
+                        // 익명은 401, 로그인한 일반 사용자는 403이다. 있는지
+                        // 없는지가 아니라 권한이 없다는 뜻이라야 한다.
+                        .requestMatchers("/api/v1/admin/**")
+                        .hasRole("ADMIN")
                         // OpenAPI에 security가 없는 공개 endpoint
                         .requestMatchers(
                                 HttpMethod.POST,

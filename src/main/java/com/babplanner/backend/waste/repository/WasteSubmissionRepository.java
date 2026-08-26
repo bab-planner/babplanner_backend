@@ -18,6 +18,9 @@ public interface WasteSubmissionRepository extends JpaRepository<WasteSubmission
 
     List<WasteSubmission> findByStatusIn(Collection<WasteSubmissionStatus> statuses);
 
+    /** 이 메뉴를 가리키는 제출이 있는지. 있으면 메뉴를 지울 수 없다. */
+    boolean existsByMenuId(Long menuId);
+
     /**
      * 처리 시작을 원자적으로 선점한다.
      *

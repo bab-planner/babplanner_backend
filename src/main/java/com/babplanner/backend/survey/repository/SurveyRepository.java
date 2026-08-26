@@ -2,6 +2,7 @@ package com.babplanner.backend.survey.repository;
 
 import com.babplanner.backend.survey.domain.Survey;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -24,4 +25,13 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
 
     @EntityGraph(attributePaths = {"questions"})
     Optional<Survey> findWithQuestionsById(Long id);
+
+    /**
+     * 관리자용 전체 목록.
+     *
+     * <p>진행 중인 것만이 아니라 지난 설문과 예정된 설문까지 모두 본다.
+     * 관리자는 그것들도 관리해야 한다.
+     */
+    @EntityGraph(attributePaths = {"questions"})
+    List<Survey> findAllByOrderByStartsAtDescIdDesc();
 }

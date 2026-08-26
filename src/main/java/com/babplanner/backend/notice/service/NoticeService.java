@@ -21,7 +21,7 @@ public class NoticeService {
     /** 중요 공지 먼저, 그다음 최신순. 앱은 이 순서를 그대로 그린다. */
     @Transactional(readOnly = true)
     public List<NoticeResponse> getNotices() {
-        return noticeRepository.findAllByOrderByImportantDescPublishedAtDescIdDesc().stream()
+        return noticeRepository.findAllByPublishedTrueOrderByImportantDescPublishedAtDescIdDesc().stream()
                 .map(NoticeResponse::from)
                 .toList();
     }
@@ -29,7 +29,7 @@ public class NoticeService {
     @Transactional(readOnly = true)
     public NoticeResponse getNotice(Long noticeId) {
         return noticeRepository
-                .findById(noticeId)
+                .findByIdAndPublishedTrue(noticeId)
                 .map(NoticeResponse::from)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOTICE_NOT_FOUND));
     }
