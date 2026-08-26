@@ -10,7 +10,8 @@ services:
       MYSQL_USER: ${MYSQL_USER:?로컬 개발용 사용자명을 환경 변수로 지정하세요}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?로컬 개발용 비밀번호를 환경 변수로 지정하세요}
     ports:
-      - "3306:3306"
+      # 호스트에 이미 MySQL이 떠 있을 수 있으므로 포트를 바꿀 수 있게 둔다.
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - babplanner-mysql-data:/var/lib/mysql
 
