@@ -29,6 +29,9 @@ bapplanner:
     password: ${DEV_USER_PASSWORD:}
     student-id: ${DEV_USER_STUDENT_ID:}
     name: ${DEV_USER_NAME:}
+  # 로컬 E2E용 설문 fixture. 기본은 꺼져 있다.
+  dev-survey:
+    enabled: ${DEV_SURVEY_ENABLED:false}
   # SMS 구현을 명시적으로 고른다. 기본값을 두지 않아 운영에서 NoOp가
   # 조용히 선택되는 일이 없다. 로컬/개발은 프로필 설정에서 noop을 켠다.
   sms:

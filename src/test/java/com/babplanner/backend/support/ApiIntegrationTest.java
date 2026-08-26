@@ -8,6 +8,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.babplanner.backend.allergy.repository.UserAllergyRepository;
 import com.babplanner.backend.auth.repository.PhoneVerificationRepository;
 import com.babplanner.backend.auth.repository.RefreshSessionRepository;
+import com.babplanner.backend.inquiry.repository.InquiryRepository;
+import com.babplanner.backend.reward.repository.CouponRepository;
+import com.babplanner.backend.reward.repository.RewardAccountRepository;
+import com.babplanner.backend.reward.repository.RewardTransactionRepository;
+import com.babplanner.backend.survey.repository.SurveyResponseRepository;
 import com.babplanner.backend.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,9 +53,20 @@ public abstract class ApiIntegrationTest {
     @Autowired protected RefreshSessionRepository refreshSessionRepository;
     @Autowired protected PhoneVerificationRepository phoneVerificationRepository;
     @Autowired protected UserAllergyRepository userAllergyRepository;
+    @Autowired protected CouponRepository couponRepository;
+    @Autowired protected RewardAccountRepository rewardAccountRepository;
+    @Autowired protected RewardTransactionRepository rewardTransactionRepository;
+    @Autowired protected SurveyResponseRepository surveyResponseRepository;
+    @Autowired protected InquiryRepository inquiryRepository;
 
     @BeforeEach
     void resetState() {
+        // users를 참조하는 자식 테이블을 먼저 비운다. FK 때문에 순서가 중요하다.
+        inquiryRepository.deleteAll();
+        surveyResponseRepository.deleteAll();
+        couponRepository.deleteAll();
+        rewardTransactionRepository.deleteAll();
+        rewardAccountRepository.deleteAll();
         userAllergyRepository.deleteAll();
         refreshSessionRepository.deleteAll();
         phoneVerificationRepository.deleteAll();
