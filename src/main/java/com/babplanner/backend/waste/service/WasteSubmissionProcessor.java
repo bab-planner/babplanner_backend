@@ -4,23 +4,19 @@ import com.babplanner.backend.waste.analysis.WasteAnalysisDecision;
 import com.babplanner.backend.waste.analysis.WasteAnalysisInput;
 import com.babplanner.backend.waste.analysis.WasteAnalysisResult;
 import com.babplanner.backend.waste.analysis.WasteAnalyzer;
-import com.babplanner.backend.waste.config.WasteAsyncConfig;
 import com.babplanner.backend.waste.domain.WasteSubmission;
 import com.babplanner.backend.waste.domain.WasteSubmissionStatus;
 import com.babplanner.backend.waste.storage.WasteImageStorage;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * 제출 한 건을 RECEIVED에서 종료 상태까지 옮긴다.
  *
- * <p>커밋 이후에만 시작한다. 커밋 전에 시작하면 아직 없는 행을 읽으려 하고,
- * 롤백된 제출까지 분석하게 된다.
+ * <p>여기까지 오는 경로는 WasteProcessingDispatcher 하나뿐이며, 실행되는
+ * 스레드는 항상 분석 전용 executor의 작업 스레드다.
  *
  * <p>각 단계는 원자적 선점(claim)으로 시작한다. 재시작 복구와 정상 흐름이
  * 같은 건을 동시에 집어도 한 쪽만 진행한다.
@@ -41,12 +37,6 @@ public class WasteSubmissionProcessor {
         this.stateStore = stateStore;
         this.imageStorage = imageStorage;
         this.analyzer = analyzer;
-    }
-
-    @Async(WasteAsyncConfig.EXECUTOR)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onSubmissionCreated(WasteSubmissionCreatedEvent event) {
-        process(event.submissionId());
     }
 
     /**

@@ -18,6 +18,9 @@ import org.springframework.stereotype.Component;
  *
  * <p>이미 종료된 건은 손대지 않는다. 선점은 원자적 UPDATE로 하므로 여러
  * 인스턴스가 동시에 떠도 한 건을 두 번 처리하지 않는다.
+ *
+ * <p>처리는 정상 제출과 같은 WasteProcessingDispatcher로 넘긴다. 통로가
+ * 둘이면 복구 경로만 포화 정책이 다른 상황이 생긴다.
  */
 @Component
 public class WasteRecoveryRunner implements ApplicationRunner {
@@ -26,15 +29,15 @@ public class WasteRecoveryRunner implements ApplicationRunner {
 
     private final WasteSubmissionRepository submissionRepository;
     private final WasteSubmissionStateStore stateStore;
-    private final WasteSubmissionProcessor processor;
+    private final WasteProcessingDispatcher dispatcher;
 
     public WasteRecoveryRunner(
             WasteSubmissionRepository submissionRepository,
             WasteSubmissionStateStore stateStore,
-            WasteSubmissionProcessor processor) {
+            WasteProcessingDispatcher dispatcher) {
         this.submissionRepository = submissionRepository;
         this.stateStore = stateStore;
-        this.processor = processor;
+        this.dispatcher = dispatcher;
     }
 
     @Override
@@ -64,7 +67,9 @@ public class WasteRecoveryRunner implements ApplicationRunner {
                 // 다른 쪽이 이미 이어받았다.
                 continue;
             }
-            processor.process(id);
+            // 정상 제출과 같은 통로를 쓴다. 기동 스레드가 분석을 직접
+            // 실행하면 서버가 뜨는 데 분석 시간만큼 더 걸린다.
+            dispatcher.dispatch(id);
             resumed++;
         }
         if (resumed > 0) {

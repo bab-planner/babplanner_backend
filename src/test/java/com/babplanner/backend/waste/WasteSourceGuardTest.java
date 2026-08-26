@@ -167,6 +167,54 @@ class WasteSourceGuardTest {
     }
 
     @Test
+    @DisplayName("포화 시 호출 스레드로 되돌리거나 조용히 버리는 정책이 없다")
+    void noCallerRunsOrDiscardPolicy() throws IOException {
+        for (Source source : sourcesUnder(MAIN)) {
+            assertThat(source.code())
+                    .as("%s", source.path())
+                    .doesNotContain("CallerRunsPolicy")
+                    .doesNotContain("DiscardPolicy")
+                    .doesNotContain("DiscardOldestPolicy");
+        }
+    }
+
+    @Test
+    @DisplayName("분석 실행 경로가 dispatcher 하나뿐이다")
+    void onlyDispatcherStartsProcessing() throws IOException {
+        for (Source source : sourcesUnder(WASTE)) {
+            if (source.path().endsWith("WasteProcessingDispatcher.java")
+                    || source.path().endsWith("WasteSubmissionProcessor.java")) {
+                continue;
+            }
+            assertThat(source.code())
+                    .as("%s 가 processor를 직접 실행한다", source.path())
+                    .doesNotContain("processor.process(")
+                    .doesNotContain(".process(");
+        }
+    }
+
+    @Test
+    @DisplayName("운영 설정이 동기 실행을 켜지 않는다")
+    void productionDoesNotRunAnalysisInline() throws IOException {
+        String yaml = Files.readString(RESOURCES.resolve("application.yml"));
+
+        assertThat(yaml).doesNotContain("async-enabled: false");
+        assertThat(Files.readString(RESOURCES.resolve("application-local.yml")))
+                .doesNotContain("async-enabled: false");
+    }
+
+    @Test
+    @DisplayName("실패 사유를 응답 필드로 노출하지 않는다")
+    void noFailureReasonField() throws IOException {
+        for (Source source : sourcesUnder(WASTE)) {
+            assertThat(source.code())
+                    .as("%s", source.path())
+                    .doesNotContain("failureReason")
+                    .doesNotContain("errorDetail");
+        }
+    }
+
+    @Test
     @DisplayName("잔반 관리자 API를 만들지 않았다")
     void noAdminApi() throws IOException {
         for (Source source : sourcesUnder(WASTE)) {
