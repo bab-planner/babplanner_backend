@@ -106,10 +106,11 @@ class WasteSubmissionStatusTest {
     void analysisDoesNotTouchReward() {
         WasteSubmission submission = submission();
 
-        submission.applyAnalysis(0.15, 0.92, NOW);
+        submission.applyAnalysis(0.15, 0.92, "fixture-waste-v1", NOW);
 
         assertThat(submission.getWasteRate()).isEqualTo(0.15);
         assertThat(submission.getConfidence()).isEqualTo(0.92);
+        assertThat(submission.getAnalysisModelVersion()).isEqualTo("fixture-waste-v1");
         assertThat(submission.getEarnedPoints()).isNull();
         assertThat(submission.getCouponIssued()).isNull();
     }

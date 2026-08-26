@@ -79,7 +79,8 @@ class WasteProcessingDispatcherTest extends ApiIntegrationTest {
                     Thread.currentThread().interrupt();
                 }
             }
-            return new WasteAnalysisResult(WasteAnalysisDecision.APPROVED, 0.15, 0.92);
+            return new WasteAnalysisResult(
+                    WasteAnalysisDecision.APPROVED, 0.15, 0.92, "fixture-waste-v1");
         }
     }
 

@@ -56,6 +56,10 @@ public class WasteSubmission {
     @Column(name = "coupon_issued")
     private Boolean couponIssued;
 
+    /** 이 판정을 낸 분석 구현. 내부 추적용이며 API 응답에 넣지 않는다. */
+    @Column(name = "analysis_model_version", length = 100)
+    private String analysisModelVersion;
+
     @Column(name = "processing_started_at")
     private Instant processingStartedAt;
 
@@ -101,9 +105,11 @@ public class WasteSubmission {
     }
 
     /** 분석 결과를 기록한다. 리워드 필드는 건드리지 않는다. */
-    public void applyAnalysis(Double wasteRate, Double confidence, Instant now) {
+    public void applyAnalysis(
+            Double wasteRate, Double confidence, String modelVersion, Instant now) {
         this.wasteRate = wasteRate;
         this.confidence = confidence;
+        this.analysisModelVersion = modelVersion;
         this.updatedAt = now;
     }
 
@@ -145,6 +151,10 @@ public class WasteSubmission {
 
     public Boolean getCouponIssued() {
         return couponIssued;
+    }
+
+    public String getAnalysisModelVersion() {
+        return analysisModelVersion;
     }
 
     public Instant getProcessingStartedAt() {

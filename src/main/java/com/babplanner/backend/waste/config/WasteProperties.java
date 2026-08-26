@@ -1,5 +1,6 @@
 package com.babplanner.backend.waste.config;
 
+import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** 잔반 기능 설정. */
@@ -12,8 +13,20 @@ public class WasteProperties {
     /** 로컬 저장소 루트. storage-mode=local일 때만 쓴다. */
     private String localRoot;
 
-    /** 분석기 구현 선택. 기본값 없음. */
+    /** 분석기 구현 선택. 기본값 없음. fake 또는 http. */
     private String analyzerMode;
+
+    /** 분석 서비스 주소. analyzer-mode=http일 때만 쓴다. 기본값 없음. */
+    private String aiBaseUrl;
+
+    /** 분석 서비스 인증 토큰. analyzer-mode=http일 때만 쓴다. 기본값 없음. */
+    private String aiServiceToken;
+
+    /** 분석 서비스 연결 대기 시간. */
+    private Duration aiConnectTimeout = Duration.ofSeconds(5);
+
+    /** 분석 서비스 응답 대기 시간. 분석은 요청 스레드가 아니라 작업 스레드가 기다린다. */
+    private Duration aiReadTimeout = Duration.ofSeconds(30);
 
     /** 허용 이미지 최대 크기(byte). */
     private long maxImageBytes = 10L * 1024 * 1024;
@@ -56,6 +69,38 @@ public class WasteProperties {
 
     public void setMaxImageBytes(long maxImageBytes) {
         this.maxImageBytes = maxImageBytes;
+    }
+
+    public String getAiBaseUrl() {
+        return aiBaseUrl;
+    }
+
+    public void setAiBaseUrl(String aiBaseUrl) {
+        this.aiBaseUrl = aiBaseUrl;
+    }
+
+    public String getAiServiceToken() {
+        return aiServiceToken;
+    }
+
+    public void setAiServiceToken(String aiServiceToken) {
+        this.aiServiceToken = aiServiceToken;
+    }
+
+    public Duration getAiConnectTimeout() {
+        return aiConnectTimeout;
+    }
+
+    public void setAiConnectTimeout(Duration aiConnectTimeout) {
+        this.aiConnectTimeout = aiConnectTimeout;
+    }
+
+    public Duration getAiReadTimeout() {
+        return aiReadTimeout;
+    }
+
+    public void setAiReadTimeout(Duration aiReadTimeout) {
+        this.aiReadTimeout = aiReadTimeout;
     }
 
     public boolean isAsyncEnabled() {

@@ -88,7 +88,8 @@ class FakeWasteAnalyzerTest {
         assertThat(java.util.Arrays.stream(WasteAnalysisResult.class.getRecordComponents())
                         .map(java.lang.reflect.RecordComponent::getName)
                         .toList())
-                .containsExactly("decision", "wasteRate", "confidence");
+                .containsExactly("decision", "wasteRate", "confidence", "modelVersion")
+                .doesNotContain("earnedPoints", "couponIssued");
     }
 
     @Test

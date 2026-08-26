@@ -4,8 +4,11 @@
 bapplanner:
   sms:
     mode: noop
-  # 로컬 디스크에 저장하고, 이미지를 판독하지 않는 개발용 분석기를 쓴다.
-  # 저장 위치는 환경 변수로 주입한다.
+  # 로컬 디스크에 저장한다. 저장 위치는 환경 변수로 주입한다.
+  #
+  # 분석기는 기본적으로 개발용 fixture를 쓰되, WASTE_ANALYZER_MODE 로 덮어쓸
+  # 수 있어야 한다. 여기에 값을 고정해 두면 환경 변수를 줘도 무시되어,
+  # 실제 분석 서비스를 붙였다고 생각하면서 계속 fixture를 쓰게 된다.
   waste:
     storage-mode: local
-    analyzer-mode: fake
+    analyzer-mode: ${WASTE_ANALYZER_MODE:fake}

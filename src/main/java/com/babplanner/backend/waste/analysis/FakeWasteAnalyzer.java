@@ -20,6 +20,9 @@ public class FakeWasteAnalyzer implements WasteAnalyzer {
 
     private static final double FIXED_CONFIDENCE = 0.92;
 
+    /** 이 값이 어디서 나왔는지 드러내는 이름을 쓴다. 실제 모델이 아니다. */
+    static final String MODEL_VERSION = "fixture-waste-v1";
+
     private final WasteImageStorage storage;
 
     public FakeWasteAnalyzer(WasteImageStorage storage) {
@@ -31,12 +34,16 @@ public class FakeWasteAnalyzer implements WasteAnalyzer {
         // 이미지를 실제로 판독하지는 않지만, 읽을 수 없는 이미지는 분석할 수 없다.
         try (InputStream stream = storage.read(input.imageStorageKey())) {
             if (stream.read() == -1) {
-                return new WasteAnalysisResult(WasteAnalysisDecision.REJECTED, null, null);
+                return new WasteAnalysisResult(
+                        WasteAnalysisDecision.REJECTED, null, null, MODEL_VERSION);
             }
         } catch (IOException exception) {
             throw new IllegalStateException("이미지를 읽지 못했습니다.", exception);
         }
         return new WasteAnalysisResult(
-                WasteAnalysisDecision.APPROVED, FIXED_WASTE_RATE, FIXED_CONFIDENCE);
+                WasteAnalysisDecision.APPROVED,
+                FIXED_WASTE_RATE,
+                FIXED_CONFIDENCE,
+                MODEL_VERSION);
     }
 }

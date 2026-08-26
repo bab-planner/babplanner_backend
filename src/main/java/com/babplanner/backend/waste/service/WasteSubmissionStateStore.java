@@ -45,7 +45,11 @@ public class WasteSubmissionStateStore {
     /** 분석 결과와 최종 상태를 함께 기록한다. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void complete(
-            Long id, WasteSubmissionStatus finalStatus, Double wasteRate, Double confidence) {
+            Long id,
+            WasteSubmissionStatus finalStatus,
+            Double wasteRate,
+            Double confidence,
+            String modelVersion) {
         submissionRepository
                 .findById(id)
                 .ifPresent(submission -> {
@@ -53,7 +57,8 @@ public class WasteSubmissionStateStore {
                     if (submission.getStatus().isTerminal()) {
                         return;
                     }
-                    submission.applyAnalysis(wasteRate, confidence, clock.instant());
+                    submission.applyAnalysis(
+                            wasteRate, confidence, modelVersion, clock.instant());
                     submission.transitionTo(finalStatus, clock.instant());
                 });
     }

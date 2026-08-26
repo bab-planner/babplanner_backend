@@ -72,18 +72,38 @@ class WasteSourceGuardTest {
     }
 
     @Test
-    @DisplayName("외부 AI 서버나 내부 전용 endpoint를 호출하지 않는다")
+    @DisplayName("외부 AI 제공자를 직접 호출하거나 프로세스를 띄우지 않는다")
     void noExternalAiCalls() throws IOException {
         for (Source source : sourcesUnder(MAIN)) {
             assertThat(source.code())
                     .as("%s", source.path())
-                    .doesNotContain("/internal/v1")
                     .doesNotContain("api.openai.com")
+                    .doesNotContain("api.anthropic.com")
                     .doesNotContain("RestTemplate")
                     .doesNotContain("WebClient")
                     .doesNotContain("ProcessBuilder")
                     .doesNotContain("Runtime.getRuntime");
         }
+    }
+
+    @Test
+    @DisplayName("내부 분석 endpoint는 부르기만 하고 제공하지 않는다")
+    void internalEndpointIsCalledNotServed() throws IOException {
+        List<String> mentions = new ArrayList<>();
+        for (Source source : sourcesUnder(MAIN)) {
+            if (source.code().contains("/internal/v1")) {
+                mentions.add(source.path());
+            }
+            // 이 경로를 우리가 열어 주면 안 된다. 사용자 API 서버는 분석
+            // 서비스의 내부 endpoint를 흉내 내지 않는다.
+            assertThat(source.code().contains("@RequestMapping(\"/internal"))
+                    .as("%s", source.path())
+                    .isFalse();
+        }
+
+        assertThat(mentions)
+                .as("내부 분석 endpoint를 아는 곳은 어댑터 하나여야 한다")
+                .containsExactly("src/main/java/com/babplanner/backend/waste/analysis/HttpWasteAnalyzer.java");
     }
 
     @Test
@@ -110,6 +130,17 @@ class WasteSourceGuardTest {
         assertThat(yaml).contains("analyzer-mode: ${WASTE_ANALYZER_MODE:}");
         assertThat(yaml).doesNotContain("storage-mode: local");
         assertThat(yaml).doesNotContain("analyzer-mode: fake");
+    }
+
+    @Test
+    @DisplayName("local 프로필이 분석기 선택을 고정하지 않는다")
+    void localProfileDoesNotPinTheAnalyzer() throws IOException {
+        String local = Files.readString(RESOURCES.resolve("application-local.yml"));
+
+        // 값을 고정해 두면 환경 변수를 줘도 무시된다. 실제 분석 서비스를
+        // 붙였다고 생각하면서 계속 fixture를 쓰게 된다.
+        assertThat(local).doesNotContain("analyzer-mode: fake");
+        assertThat(local).contains("analyzer-mode: ${WASTE_ANALYZER_MODE:");
     }
 
     @Test

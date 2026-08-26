@@ -80,7 +80,12 @@ public class WasteSubmissionProcessor {
                             : WasteSubmissionStatus.REJECTED;
             // 리워드는 여기서 지급하지 않는다. 지급 규칙이 아직 없으므로
             // earnedPoints/couponIssued는 null로 남는다.
-            stateStore.complete(submissionId, finalStatus, result.wasteRate(), result.confidence());
+            stateStore.complete(
+                    submissionId,
+                    finalStatus,
+                    result.wasteRate(),
+                    result.confidence(),
+                    result.modelVersion());
         } catch (RuntimeException exception) {
             // 사용자 데이터가 섞일 수 있어 예외 메시지는 남기지 않는다.
             log.warn("잔반 제출 처리에 실패했습니다. id={}", submissionId);
