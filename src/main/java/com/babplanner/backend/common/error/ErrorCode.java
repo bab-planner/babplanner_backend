@@ -21,6 +21,7 @@ public enum ErrorCode {
 
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 정보를 찾을 수 없습니다."),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 요청입니다."),
     MENU_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 메뉴입니다."),
     NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 공지사항입니다."),
     CONGESTION_NOT_AVAILABLE(HttpStatus.NOT_FOUND, "현재 혼잡도 정보를 제공할 수 없습니다."),
@@ -28,12 +29,15 @@ public enum ErrorCode {
     COUPON_NOT_USABLE(HttpStatus.CONFLICT, "이 쿠폰을 현재 사용할 수 없습니다."),
     SURVEY_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 참여한 설문입니다."),
     INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 문의입니다."),
+    WASTE_SUBMISSION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 잔반 인증입니다."),
     DUPLICATE_PHONE(HttpStatus.CONFLICT, "이미 가입된 휴대폰 번호입니다."),
     DUPLICATE_STUDENT_ID(HttpStatus.CONFLICT, "이미 가입된 학번입니다."),
 
     UNPROCESSABLE(HttpStatus.UNPROCESSABLE_ENTITY, "요청을 처리할 수 없습니다."),
     INVALID_SURVEY_ANSWER(HttpStatus.UNPROCESSABLE_ENTITY, "설문 응답을 처리할 수 없습니다."),
     UNKNOWN_ALLERGY(HttpStatus.UNPROCESSABLE_ENTITY, "존재하지 않는 알레르기 항목이 포함되어 있습니다."),
+    INVALID_WASTE_SUBMISSION(HttpStatus.UNPROCESSABLE_ENTITY, "잔반 인증 요청을 처리할 수 없습니다."),
+    INVALID_WASTE_IMAGE(HttpStatus.UNPROCESSABLE_ENTITY, "잔반 사진을 처리할 수 없습니다."),
 
     RESEND_TOO_SOON(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 인증번호를 요청해 주세요."),
 

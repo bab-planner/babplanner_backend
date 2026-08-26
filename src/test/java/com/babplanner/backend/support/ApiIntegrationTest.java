@@ -14,6 +14,7 @@ import com.babplanner.backend.reward.repository.RewardAccountRepository;
 import com.babplanner.backend.reward.repository.RewardTransactionRepository;
 import com.babplanner.backend.survey.repository.SurveyResponseRepository;
 import com.babplanner.backend.user.repository.UserRepository;
+import com.babplanner.backend.waste.repository.WasteSubmissionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
@@ -58,10 +59,12 @@ public abstract class ApiIntegrationTest {
     @Autowired protected RewardTransactionRepository rewardTransactionRepository;
     @Autowired protected SurveyResponseRepository surveyResponseRepository;
     @Autowired protected InquiryRepository inquiryRepository;
+    @Autowired protected WasteSubmissionRepository wasteSubmissionRepository;
 
     @BeforeEach
     void resetState() {
         // users를 참조하는 자식 테이블을 먼저 비운다. FK 때문에 순서가 중요하다.
+        wasteSubmissionRepository.deleteAll();
         inquiryRepository.deleteAll();
         surveyResponseRepository.deleteAll();
         couponRepository.deleteAll();

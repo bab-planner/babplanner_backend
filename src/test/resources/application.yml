@@ -19,6 +19,13 @@ spring:
 bapplanner:
   sms:
     mode: noop
+  waste:
+    storage-mode: local
+    # 테스트 전용 임시 디렉터리. 실제 서비스 경로가 아니다.
+    local-root: ${java.io.tmpdir}/babplanner-test-waste-images
+    analyzer-mode: fake
+    # 분석을 호출 스레드에서 끝낸다. 결과를 기다리는 sleep이 필요 없다.
+    async-enabled: false
   auth:
     # 테스트 전용 가짜 키. 실제 서비스 키가 아니다.
     signing-key: test-only-signing-key-not-a-real-secret-0123456789

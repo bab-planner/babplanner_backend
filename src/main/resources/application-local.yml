@@ -4,3 +4,8 @@
 bapplanner:
   sms:
     mode: noop
+  # 로컬 디스크에 저장하고, 이미지를 판독하지 않는 개발용 분석기를 쓴다.
+  # 저장 위치는 환경 변수로 주입한다.
+  waste:
+    storage-mode: local
+    analyzer-mode: fake

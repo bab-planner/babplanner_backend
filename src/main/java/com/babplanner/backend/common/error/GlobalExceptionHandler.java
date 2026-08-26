@@ -18,6 +18,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -97,6 +98,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
     public ResponseEntity<ApiResponse<Void>> handleNoHandler(Exception exception) {
         return respond(ErrorCode.NOT_FOUND, null);
+    }
+
+    /**
+     * 매핑된 경로에 허용되지 않은 method.
+     *
+     * <p>잡지 않으면 500으로 응답되고 stack trace까지 로그에 남는다. 서버
+     * 오류가 아니라 잘못된 요청이므로 405로 돌려준다.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException exception) {
+        return respond(ErrorCode.METHOD_NOT_ALLOWED, null);
     }
 
     @ExceptionHandler(Exception.class)
