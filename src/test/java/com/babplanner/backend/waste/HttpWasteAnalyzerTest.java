@@ -100,7 +100,7 @@ class HttpWasteAnalyzerTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-7","decision":"APPROVED","wasteRate":0.15,
-                 "confidence":0.92,"modelVersion":"fixture-waste-v1"}
+                 "confidence":0.92,"modelVersion":"fastapi-fixture-waste-v1"}
                 """);
     }
 
@@ -221,7 +221,7 @@ class HttpWasteAnalyzerTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-7","decision":"REJECTED","wasteRate":null,
-                 "confidence":null,"modelVersion":"fixture-waste-v1"}
+                 "confidence":null,"modelVersion":"fastapi-fixture-waste-v1"}
                 """);
 
         WasteAnalysisResult result = analyze();
@@ -236,7 +236,30 @@ class HttpWasteAnalyzerTest {
     void mapsModelVersion() {
         respondApproved();
 
-        assertThat(analyze().modelVersion()).isEqualTo("fixture-waste-v1");
+        assertThat(analyze().modelVersion()).isEqualTo("fastapi-fixture-waste-v1");
+    }
+
+    @Test
+    @DisplayName("모델 버전을 손대지 않고 그대로 둔다")
+    void modelVersionIsPassedThroughUntouched() {
+        // 어느 구현이 판정했는지는 분석 서비스가 아는 사실이다. 어댑터가
+        // prefix를 붙이거나 바꿔 쓰면 그 사실이 왜곡된다.
+        respond(
+                HttpStatus.OK,
+                """
+                {"requestId":"waste-7","decision":"APPROVED","wasteRate":0.15,
+                 "confidence":0.92,"modelVersion":"waste-resnet-2026.08"}
+                """);
+
+        assertThat(analyze().modelVersion()).isEqualTo("waste-resnet-2026.08");
+    }
+
+    @Test
+    @DisplayName("서버 값을 이 프로세스의 fixture 이름으로 바꾸지 않는다")
+    void adapterNeverSubstitutesItsOwnFixtureName() {
+        respondApproved();
+
+        assertThat(analyze().modelVersion()).isNotEqualTo("spring-fixture-waste-v1");
     }
 
     @Test
@@ -246,7 +269,7 @@ class HttpWasteAnalyzerTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-999","decision":"APPROVED","wasteRate":0.15,
-                 "confidence":0.92,"modelVersion":"fixture-waste-v1"}
+                 "confidence":0.92,"modelVersion":"fastapi-fixture-waste-v1"}
                 """);
 
         assertThatThrownBy(this::analyze).isInstanceOf(WasteAnalysisException.class);
@@ -259,7 +282,7 @@ class HttpWasteAnalyzerTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-7","decision":"APPROVED","wasteRate":null,
-                 "confidence":null,"modelVersion":"fixture-waste-v1"}
+                 "confidence":null,"modelVersion":"fastapi-fixture-waste-v1"}
                 """);
 
         assertThatThrownBy(this::analyze).isInstanceOf(WasteAnalysisException.class);
@@ -272,7 +295,7 @@ class HttpWasteAnalyzerTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-7","decision":"APPROVED","wasteRate":1.5,
-                 "confidence":0.92,"modelVersion":"fixture-waste-v1"}
+                 "confidence":0.92,"modelVersion":"fastapi-fixture-waste-v1"}
                 """);
 
         assertThatThrownBy(this::analyze).isInstanceOf(WasteAnalysisException.class);
@@ -285,7 +308,7 @@ class HttpWasteAnalyzerTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-7","decision":"APPROVED","wasteRate":0.15,
-                 "confidence":-0.1,"modelVersion":"fixture-waste-v1"}
+                 "confidence":-0.1,"modelVersion":"fastapi-fixture-waste-v1"}
                 """);
 
         assertThatThrownBy(this::analyze).isInstanceOf(WasteAnalysisException.class);
@@ -298,7 +321,7 @@ class HttpWasteAnalyzerTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-7","decision":"MAYBE","wasteRate":0.15,
-                 "confidence":0.92,"modelVersion":"fixture-waste-v1"}
+                 "confidence":0.92,"modelVersion":"fastapi-fixture-waste-v1"}
                 """);
 
         assertThatThrownBy(this::analyze).isInstanceOf(WasteAnalysisException.class);
@@ -311,7 +334,7 @@ class HttpWasteAnalyzerTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-7","wasteRate":0.15,"confidence":0.92,
-                 "modelVersion":"fixture-waste-v1"}
+                 "modelVersion":"fastapi-fixture-waste-v1"}
                 """);
 
         assertThatThrownBy(this::analyze).isInstanceOf(WasteAnalysisException.class);

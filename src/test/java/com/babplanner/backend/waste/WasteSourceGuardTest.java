@@ -246,6 +246,26 @@ class WasteSourceGuardTest {
     }
 
     @Test
+    @DisplayName("두 개발용 fixture가 서로 다른 이름을 쓴다")
+    void fixtureVersionsAreDistinguishable() throws IOException {
+        String fake = Files.readString(WASTE.resolve("analysis/FakeWasteAnalyzer.java"));
+
+        // 이름이 같으면 저장된 결과만 보고 어느 경로로 분석됐는지 알 수 없다.
+        assertThat(fake).contains("\"spring-fixture-waste-v1\"");
+        assertThat(fake).doesNotContain("\"fastapi-fixture-waste-v1\"");
+    }
+
+    @Test
+    @DisplayName("어댑터가 모델 버전을 지어내지 않는다")
+    void adapterDoesNotInventModelVersions() throws IOException {
+        String adapter = Files.readString(WASTE.resolve("analysis/HttpWasteAnalyzer.java"));
+
+        // 분석 서비스 응답이 유일한 출처다.
+        assertThat(adapter).doesNotContain("fixture-waste-v1");
+        assertThat(adapter).doesNotContain("fastapi-");
+    }
+
+    @Test
     @DisplayName("잔반 관리자 API를 만들지 않았다")
     void noAdminApi() throws IOException {
         for (Source source : sourcesUnder(WASTE)) {

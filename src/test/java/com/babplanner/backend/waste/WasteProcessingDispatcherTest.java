@@ -80,7 +80,7 @@ class WasteProcessingDispatcherTest extends ApiIntegrationTest {
                 }
             }
             return new WasteAnalysisResult(
-                    WasteAnalysisDecision.APPROVED, 0.15, 0.92, "fixture-waste-v1");
+                    WasteAnalysisDecision.APPROVED, 0.15, 0.92, "spring-fixture-waste-v1");
         }
     }
 

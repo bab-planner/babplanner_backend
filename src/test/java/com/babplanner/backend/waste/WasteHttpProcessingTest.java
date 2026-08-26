@@ -123,7 +123,7 @@ class WasteHttpProcessingTest extends ApiIntegrationTest {
     private String approvedBodyFor(long submissionId) {
         return """
                 {"requestId":"waste-%d","decision":"APPROVED","wasteRate":0.15,
-                 "confidence":0.92,"modelVersion":"fixture-waste-v1"}
+                 "confidence":0.92,"modelVersion":"fastapi-fixture-waste-v1"}
                 """
                 .formatted(submissionId);
     }
@@ -152,7 +152,7 @@ class WasteHttpProcessingTest extends ApiIntegrationTest {
                 HttpStatus.OK,
                 """
                 {"requestId":"waste-%d","decision":"REJECTED","wasteRate":null,
-                 "confidence":null,"modelVersion":"fixture-waste-v1"}
+                 "confidence":null,"modelVersion":"fastapi-fixture-waste-v1"}
                 """
                         .formatted(id));
 
@@ -170,7 +170,7 @@ class WasteHttpProcessingTest extends ApiIntegrationTest {
 
         dispatcher.dispatch(id);
 
-        assertThat(stored(id).getAnalysisModelVersion()).isEqualTo("fixture-waste-v1");
+        assertThat(stored(id).getAnalysisModelVersion()).isEqualTo("fastapi-fixture-waste-v1");
     }
 
     @Test
@@ -269,6 +269,6 @@ class WasteHttpProcessingTest extends ApiIntegrationTest {
 
         assertThat(result.getResponse().getContentAsString())
                 .doesNotContain("modelVersion")
-                .doesNotContain("fixture-waste-v1");
+                .doesNotContain("fastapi-fixture-waste-v1");
     }
 }

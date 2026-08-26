@@ -82,6 +82,31 @@ class FakeWasteAnalyzerTest {
     }
 
     @Test
+    @DisplayName("모델 버전이 이 프로세스의 fixture임을 드러낸다")
+    void modelVersionNamesThisProcess() {
+        String key = store("image".getBytes(StandardCharsets.UTF_8));
+
+        WasteAnalysisResult result = analyzer().analyze(new WasteAnalysisInput(1L, 2L, key));
+
+        // 분석 서비스 쪽 fixture와 이름이 같으면 저장된 결과만 보고
+        // 어느 쪽을 거쳐 왔는지 알 수 없다.
+        assertThat(result.modelVersion()).isEqualTo("spring-fixture-waste-v1");
+        assertThat(result.modelVersion()).isNotEqualTo("fastapi-fixture-waste-v1");
+        assertThat(result.modelVersion()).contains("fixture");
+    }
+
+    @Test
+    @DisplayName("거절된 결과에도 모델 버전이 있다")
+    void rejectedResultAlsoCarriesModelVersion() {
+        String key = store(new byte[0]);
+
+        WasteAnalysisResult result = analyzer().analyze(new WasteAnalysisInput(1L, 2L, key));
+
+        assertThat(result.decision()).isEqualTo(WasteAnalysisDecision.REJECTED);
+        assertThat(result.modelVersion()).isEqualTo("spring-fixture-waste-v1");
+    }
+
+    @Test
     @DisplayName("결과에 리워드 필드가 없다")
     void resultCarriesNoRewardFields() {
         // record component 이름으로 고정한다. 분석기가 지급을 결정하지 않는다.
