@@ -45,6 +45,12 @@ public class AdminMenuController {
         return ApiResponse.success(adminMenuService.getMenus(date, mealType));
     }
 
+    /** 수정 화면이 읽는 상세. 관리 화면이 공개 endpoint에 기대지 않게 한다. */
+    @GetMapping("/{menuId}")
+    public ApiResponse<MenuDetailResponse> getMenu(@PathVariable Long menuId) {
+        return ApiResponse.success(adminMenuService.getMenu(menuId));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<MenuDetailResponse>> createMenu(
             @Valid @RequestBody MenuWriteRequest request) {

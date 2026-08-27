@@ -1,0 +1,137 @@
+# 밥플래너 MVP 환경 설정
+
+네 구성 요소가 각각 무엇을 요구하는지 한 곳에 모았다. 값은 전부 실제 소스에서
+읽은 것이고, 여기에 실제 비밀 값은 적지 않는다.
+
+```
+Flutter App ─┐
+             ├─→ Spring Backend ─→ MySQL 8.4
+Admin Web ───┘         │
+                       └────────→ FastAPI (AI)
+```
+
+FastAPI와 MySQL은 브라우저나 앱이 직접 부르지 않는다. 백엔드만 접근한다.
+
+---
+
+## 1. Spring Backend
+
+`src/main/resources/application.yml` 에 정의된 것 전부다.
+
+| 변수 | 필수 | local 예시 | production | 비밀 | 비고 |
+|---|---|---|---|---|---|
+| `DB_URL` | 예 | `jdbc:mysql://127.0.0.1:3307/babplanner?serverTimezone=UTC&characterEncoding=UTF-8` | 운영 DB | 아니오 | 기본값 없음. 없으면 기동 실패 |
+| `DB_USERNAME` | 예 | — | — | 예 | |
+| `DB_PASSWORD` | 예 | — | — | **예** | |
+| `JWT_SIGNING_KEY` | 예 | 임의 32바이트 이상 | 별도 관리 | **예** | 32바이트 미만이면 기동 실패 |
+| `PHONE_VERIFICATION_HMAC_KEY` | 예 | 임의 32바이트 이상 | 별도 관리 | **예** | `JWT_SIGNING_KEY`와 **다른 값**이어야 한다 |
+| `BAPPLANNER_BUSINESS_ZONE_ID` | 예 | `Asia/Seoul` | `Asia/Seoul` | 아니오 | 급식 운영일을 끊는 IANA 시간대. 미설정/오타면 기동 실패 |
+| `BAPPLANNER_INTERNAL_SERVICE_TOKEN` | 예 | 임의 32자 이상 | 별도 관리 | **예** | `/internal/v1/**` 이 **받는** 토큰 |
+| `AI_SERVICE_BASE_URL` | 조건부 | `http://127.0.0.1:8001` | 내부 주소 | 아니오 | 예측·발주 실행과 `WASTE_ANALYZER_MODE=http` 에 필요 |
+| `AI_SERVICE_TOKEN` | 조건부 | 임의 32자 이상 | 별도 관리 | **예** | Spring이 FastAPI로 **보내는** 토큰 |
+| `SMS_MODE` | 예 | `noop` | 실제 어댑터 | 아니오 | 기본값 없음. 운영에서 `noop`이 조용히 선택되지 않게 |
+| `WASTE_STORAGE_MODE` | 예 | `local` | (아래 참고) | 아니오 | 기본값 없음 |
+| `WASTE_LOCAL_ROOT` | 조건부 | 로컬 디렉터리 | — | 아니오 | `storage-mode=local` 일 때만 |
+| `WASTE_ANALYZER_MODE` | 예 | `fake` 또는 `http` | `http` | 아니오 | 기본값 없음 |
+| `DEV_ADMIN_ENABLED` | 아니오 | `true` | **false** | 아니오 | 기본 `false` |
+| `DEV_ADMIN_PHONE` / `DEV_ADMIN_PASSWORD` / `DEV_ADMIN_STUDENT_ID` / `DEV_ADMIN_NAME` | 조건부 | — | 사용 안 함 | **예**(비밀번호) | `DEV_ADMIN_ENABLED=true` 일 때만. `local`/`dev` 프로필 전용 |
+| `DEV_USER_ENABLED` | 아니오 | `true` | **false** | 아니오 | 기본 `false` |
+| `DEV_USER_PHONE` / `DEV_USER_PASSWORD` / `DEV_USER_STUDENT_ID` / `DEV_USER_NAME` | 조건부 | — | 사용 안 함 | **예**(비밀번호) | 위와 같다 |
+| `DEV_SURVEY_ENABLED` | 아니오 | `true` | **false** | 아니오 | 기본 `false` |
+
+### 없어진 이름
+
+Stage 24에서 **제거**됐다. 지금 코드는 이 이름을 읽지 않는다.
+
+| 옛 이름 | 새 이름 |
+|---|---|
+| `AI_WASTE_BASE_URL` | `AI_SERVICE_BASE_URL` |
+| `AI_WASTE_SERVICE_TOKEN` | `AI_SERVICE_TOKEN` |
+
+옛 이름을 설정해도 무시된다. 폴백이 없으므로 배포 스크립트를 반드시 고쳐야 한다.
+
+### 두 서비스 토큰은 다른 것이다
+
+| | 방향 | 쓰는 곳 |
+|---|---|---|
+| `BAPPLANNER_INTERNAL_SERVICE_TOKEN` | Spring이 **받는다** | CCTV 수집기 등이 `/internal/v1/congestion-observations` 를 부를 때 |
+| `AI_SERVICE_TOKEN` | Spring이 **보낸다** | Spring이 FastAPI의 `/internal/v1/ai/**` 를 부를 때 |
+
+같은 값으로 둘 필요가 없고, 그러지 않는 편이 낫다. 하나가 새면 양쪽이 함께
+뚫린다.
+
+### 시간대를 반드시 설정해야 하는 이유
+
+`Menu.serviceDate`는 시각이 아니라 급식소 현지 영업일이다. 시간대가 없으면
+UTC로 끊게 되고, 한국에서는 자정부터 오전 9시까지 대시보드가 전날 급식을
+오늘로 보여 준다. 그래서 미설정을 기동 실패로 막아 두었다. 이건 의도된
+동작이다.
+
+---
+
+## 2. FastAPI (AI)
+
+`src/babplanner_ai/config.py` 에 정의된 것 전부다.
+
+| 변수 | 필수 | local 예시 | production | 비밀 | 비고 |
+|---|---|---|---|---|---|
+| `APP_ENV` | 예 | `local` | `production` | 아니오 | 기본값 없음 |
+| `AI_SERVICE_TOKEN` | 예 | Spring과 **같은 값** | 별도 관리 | **예** | 32자 미만이면 기동 실패 |
+| `WASTE_MODEL_MODE` | 예 | `fixture` | 실제 어댑터 | 아니오 | 기본값 없음. production + fixture는 기동 실패 |
+| `DEMAND_MODEL_MODE` | 아니오 | `fixture` | `disabled` | 아니오 | 기본 `disabled`. production + fixture는 기동 실패 |
+| `PROCUREMENT_MODEL_MODE` | 아니오 | `fixture` | `disabled` | 아니오 | 위와 같다 |
+| `AI_MAX_IMAGE_BYTES` | 아니오 | — | — | 아니오 | 기본 10MB |
+
+`disabled`는 fixture가 아니다. 끄면 숫자를 만들지 않고 503을 돌려준다.
+
+---
+
+## 3. Flutter 사용자 앱
+
+`lib/core/network/api_config.dart` 에 정의된 것 전부다. `--dart-define` 으로 넣는다.
+
+| 키 | 필수 | 값 | 비밀 | 비고 |
+|---|---|---|---|---|
+| `APP_DATA_MODE` | 아니오 | `real` 일 때만 실제 서버를 본다 | 아니오 | 기본 `fake` |
+| `API_BASE_URL` | 조건부 | `http://10.0.2.2:8080` (에뮬레이터) | 아니오 | 비어 있으면 Real transport를 만들 수 없어 Fake로 동작 |
+
+앱에는 서버 비밀 값이 하나도 들어가지 않는다. 설치본을 뜯으면 `--dart-define`
+값이 그대로 보이므로, 토큰류를 여기 넣어서는 안 된다.
+
+---
+
+## 4. Admin Web
+
+`.env.example` 과 `vite.config.ts` 에 정의된 것 전부다.
+
+| 키 | 필수 | local | production | 비밀 | 비고 |
+|---|---|---|---|---|---|
+| `VITE_API_BASE_URL` | 아니오 | 비움 | 비움(같은 출처) | 아니오 | 비면 상대 경로를 쓴다 |
+| `VITE_DEV_API_TARGET` | 아니오 | `http://127.0.0.1:8080` | 사용 안 함 | 아니오 | 개발 서버 프록시 대상 |
+
+**`VITE_*` 는 전부 브라우저 번들에 그대로 실린다.** 서비스 토큰, JWT 서명 키,
+DB 비밀번호를 여기 넣으면 누구나 읽을 수 있다.
+
+---
+
+## 5. 배포 형태 (권장)
+
+호스팅 업체는 아직 정해지지 않았다. 아래는 MVP 권장안이고, 실제 결정이 나면
+그때 확정한다.
+
+```
+https://admin.example
+  /        → Admin 정적 파일
+  /api/    → Spring Backend
+```
+
+같은 출처 리버스 프록시. 이러면 브라우저에 CORS 설정이 필요 없다.
+
+그래서 이번 단계에서 백엔드에 CORS를 열지 **않았다.** 특히
+`Access-Control-Allow-Origin: *` 와 bearer 인증을 함께 쓰는 설정은 만들지
+않는다. 별도 도메인 배포가 실제로 정해지면 그때 허용 출처를 명시한 CORS를
+추가한다.
+
+- FastAPI는 브라우저를 향한 서비스가 아니다. 공개 API로 노출하지 않는다.
+- MySQL은 백엔드만 접근한다. 앱·관리자 웹·AI 서비스는 DB에 직접 붙지 않는다.
+- AI 서비스는 상태를 갖지 않는다. 저장은 전부 백엔드가 한다.

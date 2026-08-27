@@ -57,6 +57,24 @@ public class AdminMenuService {
                 .toList();
     }
 
+    /**
+     * 수정 화면이 채울 현재 값.
+     *
+     * <p>공개 조회와 같은 저장소를 읽는다. 관리자용 사본을 따로 두면 한쪽만
+     * 고쳤을 때 두 화면이 다른 것을 보여 준다.
+     *
+     * <p>내용이 공개 조회와 같더라도 경로는 나눈다. 관리 화면이 공개
+     * endpoint에 기대고 있으면, 나중에 미공개 식단 같은 개념이 생겨 공개
+     * 조회가 좁아지는 순간 관리 화면이 같이 망가진다.
+     */
+    @Transactional(readOnly = true)
+    public MenuDetailResponse getMenu(Long menuId) {
+        return menuRepository
+                .findWithDetailById(menuId)
+                .map(MenuDetailResponse::from)
+                .orElseThrow(() -> new ApiException(ErrorCode.MENU_NOT_FOUND));
+    }
+
     @Transactional
     public MenuDetailResponse create(MenuWriteRequest request) {
         DiningSite site = resolveSite(request);
