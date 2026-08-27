@@ -47,7 +47,15 @@ class AdminCongestionApiTest extends ApiIntegrationTest {
     private void observe(
             DiningSite site, CongestionLevel level, Integer people, Instant observedAt) {
         observationRepository.save(new CongestionObservation(
-                site, level, people, "5분 이내", "TEST", observedAt, BASE));
+                site,
+                level,
+                people,
+                "5분 이내",
+                "TEST",
+                "test-device",
+                "test-model-v1",
+                observedAt,
+                BASE));
     }
 
     private MvcResult query(String queryString, String token) throws Exception {

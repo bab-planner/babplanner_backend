@@ -48,6 +48,21 @@ public class CongestionObservation {
     @Column(length = 30)
     private String source;
 
+    /**
+     * 관측 장비 식별자.
+     *
+     * <p>사람이 아니라 장비를 가리킨다. 어느 카메라가 이상한 값을 보내는지
+     * 추적하려면 필요하다. 사용자 식별 정보는 여기 들어오지 않는다.
+     *
+     * <p>V22가 옮겨 둔 기존 행에는 값이 없어 nullable이다.
+     */
+    @Column(name = "device_id", length = 100)
+    private String deviceId;
+
+    /** 판정에 쓴 모델 버전. 값이 튀기 시작한 시점을 찾는 데 쓴다. */
+    @Column(name = "model_version", length = 100)
+    private String modelVersion;
+
     @Column(name = "observed_at", nullable = false)
     private Instant observedAt;
 
@@ -62,6 +77,8 @@ public class CongestionObservation {
             Integer peopleCount,
             String displayMessage,
             String source,
+            String deviceId,
+            String modelVersion,
             Instant observedAt,
             Instant createdAt) {
         this.site = site;
@@ -69,6 +86,8 @@ public class CongestionObservation {
         this.peopleCount = peopleCount;
         this.displayMessage = displayMessage;
         this.source = source;
+        this.deviceId = deviceId;
+        this.modelVersion = modelVersion;
         this.observedAt = observedAt;
         this.createdAt = createdAt;
     }
@@ -95,6 +114,14 @@ public class CongestionObservation {
 
     public String getSource() {
         return source;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public String getModelVersion() {
+        return modelVersion;
     }
 
     public Instant getObservedAt() {

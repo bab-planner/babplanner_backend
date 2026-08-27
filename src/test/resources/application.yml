@@ -20,6 +20,13 @@ bapplanner:
   # 테스트는 UTC로 고정한다. 시간대 경계 자체를 확인하는 테스트는 자기
   # 시간대를 명시해서 쓴다.
   business-zone-id: UTC
+  # 테스트 전용 가짜 토큰. 실제 서비스 토큰이 아니다.
+  internal:
+    service-token: test-only-internal-service-token-not-a-real-secret
+  # 실제 호출은 하지 않는다. MockRestServiceServer가 대신 받는다.
+  ai:
+    base-url: http://ai.test.invalid
+    service-token: test-only-ai-service-token-not-a-real-secret
   sms:
     mode: noop
   waste:

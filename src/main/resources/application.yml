@@ -30,6 +30,17 @@ bapplanner:
   # 비밀 값이 아니지만 기본값을 두지 않는다. 미설정 시 UTC로 조용히 넘어가면
   # 자정 무렵 하루가 어긋난 채로 동작하므로 기동에 실패시킨다.
   business-zone-id: ${BAPPLANNER_BUSINESS_ZONE_ID:}
+  # 내부 수집 경로(/internal/v1/**)가 받는 서비스 토큰. 최소 32자.
+  # 기본값을 두지 않는다. 값이 없으면 기동에 실패한다.
+  internal:
+    service-token: ${BAPPLANNER_INTERNAL_SERVICE_TOKEN:}
+  # AI 서비스(FastAPI) 호출 설정. 잔반/수요/발주가 같은 프로세스이므로
+  # 주소와 토큰도 하나만 둔다. 이 토큰은 위 internal 토큰과 다른 값이다.
+  ai:
+    base-url: ${AI_SERVICE_BASE_URL:}
+    service-token: ${AI_SERVICE_TOKEN:}
+    connect-timeout: 5s
+    read-timeout: 30s
   # 로컬 E2E용 사용자 fixture. 기본은 꺼져 있고 값도 없다.
   # 켜려면 local/dev 프로필에서 값을 전부 환경 변수로 주입해야 한다.
   dev-user:
@@ -59,11 +70,6 @@ bapplanner:
     storage-mode: ${WASTE_STORAGE_MODE:}
     local-root: ${WASTE_LOCAL_ROOT:}
     analyzer-mode: ${WASTE_ANALYZER_MODE:}
-    # analyzer-mode=http 일 때만 쓴다. 실제 주소와 토큰은 환경 변수로만 넣는다.
-    ai-base-url: ${AI_WASTE_BASE_URL:}
-    ai-service-token: ${AI_WASTE_SERVICE_TOKEN:}
-    ai-connect-timeout: 5s
-    ai-read-timeout: 30s
     max-image-bytes: 10485760
   auth:
     # 실제 키는 환경 변수로만 주입한다. 기본값을 두지 않아 미설정 시 기동에 실패한다.

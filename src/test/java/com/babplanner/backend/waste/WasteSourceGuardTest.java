@@ -91,18 +91,19 @@ class WasteSourceGuardTest {
     void internalEndpointIsCalledNotServed() throws IOException {
         List<String> mentions = new ArrayList<>();
         for (Source source : sourcesUnder(MAIN)) {
-            if (source.code().contains("/internal/v1")) {
+            if (source.code().contains("/internal/v1/ai/waste")) {
                 mentions.add(source.path());
             }
-            // 이 경로를 우리가 열어 주면 안 된다. 사용자 API 서버는 분석
-            // 서비스의 내부 endpoint를 흉내 내지 않는다.
-            assertThat(source.code().contains("@RequestMapping(\"/internal"))
+            // 분석 서비스의 내부 endpoint를 우리가 열어 주면 안 된다.
+            // /internal/v1/congestion-observations 는 우리 것이고 이 규칙과
+            // 무관하다. 우리가 제공하지 않는 것은 /internal/v1/ai/** 다.
+            assertThat(source.code().contains("@RequestMapping(\"/internal/v1/ai"))
                     .as("%s", source.path())
                     .isFalse();
         }
 
         assertThat(mentions)
-                .as("내부 분석 endpoint를 아는 곳은 어댑터 하나여야 한다")
+                .as("잔반 분석 endpoint를 아는 곳은 어댑터 하나여야 한다")
                 .containsExactly("src/main/java/com/babplanner/backend/waste/analysis/HttpWasteAnalyzer.java");
     }
 

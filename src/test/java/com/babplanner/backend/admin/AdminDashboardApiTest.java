@@ -41,6 +41,10 @@ class AdminDashboardApiTest extends ApiIntegrationTest {
     @Autowired private CongestionStatusRepository congestionStatusRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private com.babplanner.backend.demand.repository.DemandPredictionRepository
+            demandPredictionRepository;
+
     /**
      * 이 테스트가 만든 식단에만 붙이는 표시.
      *
@@ -184,6 +188,34 @@ class AdminDashboardApiTest extends ApiIntegrationTest {
         assertThat(summary.path("totalSubmissions").asLong()).isZero();
         assertThat(summary.path("averageWasteRate").isNull()).isTrue();
         assertThat(summary.path("repeatedWasteMenuCount").isNull()).isTrue();
+    }
+
+    @Test
+    @DisplayName("저장된 예측이 있어도 대시보드는 여전히 null이다")
+    void storedPredictionsDoNotReachTheDashboard() throws Exception {
+        var site = siteRepository.findAllByOrderBySortOrderAscIdAsc().getFirst();
+        var prediction = demandPredictionRepository.save(
+                new com.babplanner.backend.demand.domain.DemandPrediction(
+                        site,
+                        TODAY,
+                        com.babplanner.backend.menu.domain.MealType.LUNCH,
+                        528,
+                        "fastapi-fixture-demand-v1",
+                        "demand-dashboard-check",
+                        clock.instant()));
+        try {
+            JsonNode data = dashboard();
+
+            // 버그가 아니다. 대시보드에는 mealType이 없어서 어느 끼니의 예측을
+            // 한 숫자로 보여 줄지 정해진 적이 없다. 아무거나 고르면 관리자는
+            // 그것이 무엇인지 모른 채 발주한다.
+            assertThat(data.path("todayPredictedPeople").isNull()).isTrue();
+            assertThat(data.path("tomorrowPredictedPeople").isNull()).isTrue();
+            assertThat(data.path("procurementPreview")).isEmpty();
+        } finally {
+            demandPredictionRepository.delete(prediction);
+            demandPredictionRepository.flush();
+        }
     }
 
     @Test

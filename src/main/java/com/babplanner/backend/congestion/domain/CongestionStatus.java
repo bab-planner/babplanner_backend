@@ -57,6 +57,50 @@ public class CongestionStatus {
         // JPA 전용
     }
 
+    /**
+     * 어떤 사이트의 첫 현재값.
+     *
+     * <p>수집 경로 말고 다른 곳에서 이 값을 새로 만들지 않는다. 현재값만
+     * 따로 쓰는 길이 생기면 이력과 현재가 갈라진다.
+     */
+    public CongestionStatus(
+            DiningSite site,
+            CongestionLevel level,
+            Integer peopleCount,
+            String displayMessage,
+            String source,
+            Instant observedAt,
+            Instant now) {
+        this.site = site;
+        this.level = level;
+        this.peopleCount = peopleCount;
+        this.displayMessage = displayMessage;
+        this.source = source;
+        this.observedAt = observedAt;
+        this.updatedAt = now;
+    }
+
+    /**
+     * 더 새로운 관측으로 현재값을 바꾼다.
+     *
+     * <p>더 오래된 관측인지는 부르는 쪽이 판단한다. 여기서 조용히 무시하면
+     * 호출자는 갱신됐다고 믿는다.
+     */
+    public void apply(
+            CongestionLevel level,
+            Integer peopleCount,
+            String displayMessage,
+            String source,
+            Instant observedAt,
+            Instant now) {
+        this.level = level;
+        this.peopleCount = peopleCount;
+        this.displayMessage = displayMessage;
+        this.source = source;
+        this.observedAt = observedAt;
+        this.updatedAt = now;
+    }
+
     public Long getId() {
         return id;
     }

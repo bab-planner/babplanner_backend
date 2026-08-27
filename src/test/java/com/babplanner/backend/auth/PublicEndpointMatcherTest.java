@@ -106,7 +106,14 @@ class PublicEndpointMatcherTest extends ApiIntegrationTest {
         assertThat(getJson("/api/v1/admin/menus").getResponse().getStatus()).isEqualTo(401);
     }
 
-    private static final String SPLIT_NEWLINE = System.lineSeparator();
+    /**
+     * 어떤 줄바꿈이든 나눈다.
+     *
+     * <p>{@code System.lineSeparator()}를 쓰면 체크아웃의 줄바꿈이 CRLF가
+     * 아닐 때 파일 전체가 한 줄이 되어, 아무 검사도 하지 않으면서 통과하거나
+     * 엉뚱하게 실패한다.
+     */
+    private static final String SPLIT_NEWLINE = "\\R";
 
     @Test
     @DisplayName("SecurityConfig에 admin 경로를 permitAll로 두지 않는다")

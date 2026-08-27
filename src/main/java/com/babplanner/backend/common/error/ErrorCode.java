@@ -30,6 +30,8 @@ public enum ErrorCode {
     COUPON_NOT_USABLE(HttpStatus.CONFLICT, "이 쿠폰을 현재 사용할 수 없습니다."),
     SURVEY_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 참여한 설문입니다."),
     MENU_IN_USE(HttpStatus.CONFLICT, "이 메뉴를 사용한 기록이 있어 삭제할 수 없습니다."),
+    DEMAND_PREDICTION_REQUIRED(
+            HttpStatus.CONFLICT, "먼저 해당 끼니의 예상 식수 인원을 예측해 주세요."),
     INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 문의입니다."),
     WASTE_SUBMISSION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 잔반 인증입니다."),
     DUPLICATE_PHONE(HttpStatus.CONFLICT, "이미 가입된 휴대폰 번호입니다."),
@@ -46,10 +48,15 @@ public enum ErrorCode {
     INVALID_DATE_RANGE(HttpStatus.UNPROCESSABLE_ENTITY, "조회 기간이 올바르지 않습니다."),
     INVALID_WASTE_SUBMISSION(HttpStatus.UNPROCESSABLE_ENTITY, "잔반 인증 요청을 처리할 수 없습니다."),
     INVALID_WASTE_IMAGE(HttpStatus.UNPROCESSABLE_ENTITY, "잔반 사진을 처리할 수 없습니다."),
+    INVALID_PROCUREMENT_REQUEST(
+            HttpStatus.UNPROCESSABLE_ENTITY, "발주 요청 내용을 처리할 수 없습니다."),
 
     RESEND_TOO_SOON(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 인증번호를 요청해 주세요."),
 
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."),
+
+    AI_SERVICE_UNAVAILABLE(
+            HttpStatus.SERVICE_UNAVAILABLE, "예측 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.");
 
     private final HttpStatus status;
     private final String message;

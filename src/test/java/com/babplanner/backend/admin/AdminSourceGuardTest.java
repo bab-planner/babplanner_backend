@@ -136,23 +136,25 @@ class AdminSourceGuardTest {
         try (Stream<Path> paths = Files.list(MIGRATIONS)) {
             List<String> names = paths.map(path -> path.getFileName().toString()).sorted().toList();
 
-            // V22만 새로 늘었다. 앞의 것은 이미 실제 DB에 적용됐다.
-            assertThat(names).contains("V22__create_congestion_observations.sql");
-            assertThat(names).hasSize(22);
+            // V23~V25만 새로 늘었다. 앞의 것은 이미 실제 DB에 적용됐다.
+            assertThat(names)
+                    .contains(
+                            "V23__add_congestion_observation_metadata.sql",
+                            "V24__create_demand_predictions.sql",
+                            "V25__create_procurement_recommendations.sql");
+            assertThat(names).hasSize(25);
         }
     }
 
     @Test
-    @DisplayName("이번 단계 범위 밖의 관리 API를 만들지 않았다")
-    void outOfScopeAdminApisAreAbsent() throws IOException {
+    @DisplayName("AI 서비스의 내부 endpoint를 흉내 내지 않는다")
+    void aiInternalEndpointsAreNotServedHere() throws IOException {
         for (Source source : sourcesUnder(MAIN)) {
+            // /internal/v1/ai/** 는 FastAPI가 제공한다. 백엔드가 같은 경로를
+            // 열어 주면 어느 쪽이 응답했는지 알 수 없다.
             assertThat(source.code())
                     .as("%s", source.path())
-                    .doesNotContain("/api/v1/admin/demand-predictions")
-                    .doesNotContain("/api/v1/admin/procurement-recommendations")
-                    .doesNotContain("/internal/v1/congestion-observations")
-                    .doesNotContain("/internal/v1/ai/demand")
-                    .doesNotContain("/internal/v1/ai/procurement");
+                    .doesNotContain("@RequestMapping(\"/internal/v1/ai");
         }
     }
 

@@ -1,18 +1,17 @@
 package com.babplanner.backend.waste.config;
 
+import com.babplanner.backend.common.client.AiRestClients;
+import com.babplanner.backend.common.config.AiServiceProperties;
 import com.babplanner.backend.waste.analysis.FakeWasteAnalyzer;
 import com.babplanner.backend.waste.analysis.HttpWasteAnalyzer;
 import com.babplanner.backend.waste.analysis.WasteAnalyzer;
 import com.babplanner.backend.waste.storage.WasteImageStorage;
-import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.RestClient;
 
 /**
  * 분석기 구현 선택.
@@ -44,39 +43,28 @@ public class WasteAnalyzerConfig {
         return new FakeWasteAnalyzer(storage);
     }
 
-    /** 별도 프로세스로 떠 있는 분석 서비스를 호출하는 구현. */
+    /**
+     * 별도 프로세스로 떠 있는 분석 서비스를 호출하는 구현.
+     *
+     * <p>주소와 토큰은 {@code bapplanner.ai}에서 온다. 잔반 전용 주소를 따로
+     * 두면 수요/발주와 다른 곳을 가리키는 배포가 가능해진다.
+     *
+     * <p>http를 명시했으면서 주소가 없으면 기동에 실패한다. 여기서 조용히
+     * 넘어가면 분석이 되는 줄 알고 배포하게 된다.
+     */
     @Bean
     @ConditionalOnProperty(
             prefix = "bapplanner.waste",
             name = "analyzer-mode",
             havingValue = "http")
-    public WasteAnalyzer httpWasteAnalyzer(WasteProperties properties, WasteImageStorage storage) {
-        String baseUrl = required(properties.getAiBaseUrl(), "bapplanner.waste.ai-base-url");
-        String token =
-                required(properties.getAiServiceToken(), "bapplanner.waste.ai-service-token");
+    public WasteAnalyzer httpWasteAnalyzer(
+            AiServiceProperties aiProperties, WasteImageStorage storage) {
+        String baseUrl = aiProperties.requiredBaseUrl();
+        String token = aiProperties.requiredServiceToken();
 
         // 주소는 비밀이 아니다. 토큰은 남기지 않는다.
         log.info("잔반 분석기: 분석 서비스 {}", baseUrl);
-        return new HttpWasteAnalyzer(
-                RestClient.builder()
-                        .baseUrl(baseUrl)
-                        .requestFactory(requestFactory(
-                                properties.getAiConnectTimeout(), properties.getAiReadTimeout()))
-                        .build(),
-                storage,
-                token);
-    }
-
-    /**
-     * 응답을 기다리는 것은 분석 전용 작업 스레드다. 요청 스레드가 아니므로
-     * 동기 호출로 충분하고, 이것 때문에 WebFlux를 끌어들이지 않는다.
-     */
-    private static SimpleClientHttpRequestFactory requestFactory(
-            Duration connectTimeout, Duration readTimeout) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout((int) connectTimeout.toMillis());
-        factory.setReadTimeout((int) readTimeout.toMillis());
-        return factory;
+        return new HttpWasteAnalyzer(AiRestClients.create(aiProperties), storage, token);
     }
 
     /** 어떤 분석기도 구성되지 않은 경우. 조용히 넘어가지 않는다. */
@@ -88,11 +76,4 @@ public class WasteAnalyzerConfig {
                         + "http 또는 fake 로 명시하세요.");
     }
 
-    private static String required(String value, String propertyName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalStateException(
-                    propertyName + " 가 필요합니다. analyzer-mode=http 를 쓰려면 값을 주입하세요.");
-        }
-        return value;
-    }
 }

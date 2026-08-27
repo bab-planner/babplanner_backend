@@ -33,12 +33,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final AccessTokenAuthenticationFilter accessTokenAuthenticationFilter;
+    private final ServiceTokenAuthenticationFilter serviceTokenAuthenticationFilter;
     private final ObjectMapper objectMapper;
 
     public SecurityConfig(
             AccessTokenAuthenticationFilter accessTokenAuthenticationFilter,
+            ServiceTokenAuthenticationFilter serviceTokenAuthenticationFilter,
             ObjectMapper objectMapper) {
         this.accessTokenAuthenticationFilter = accessTokenAuthenticationFilter;
+        this.serviceTokenAuthenticationFilter = serviceTokenAuthenticationFilter;
         this.objectMapper = objectMapper;
     }
 
@@ -51,6 +54,14 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 서비스 간 호출 전용. 사람이 쓰는 경로가 아니다.
+                        //
+                        // 사람 역할(ROLE_*)이 아니라 별도 권한을 요구한다.
+                        // 그래서 ADMIN JWT만 들고 와도 들어올 수 없다. 관리자
+                        // 계정 하나가 새면 수집 경로까지 열리는 구조를 만들지
+                        // 않는다.
+                        .requestMatchers("/internal/v1/**")
+                        .hasAuthority(ServiceTokenAuthenticationFilter.INTERNAL_SERVICE_AUTHORITY)
                         // 관리자 전용. 아래 공개 규칙보다 먼저 둔다. 나중에
                         // 공개 규칙이 늘어나다 admin 경로까지 걸리면 관리 API가
                         // 통째로 열린다.
@@ -88,7 +99,10 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, exception) ->
                                 writeError(response, ErrorCode.FORBIDDEN)))
                 .addFilterBefore(
-                        accessTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        accessTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        serviceTokenAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.babplanner.backend.waste.analysis.FakeWasteAnalyzer;
 import com.babplanner.backend.waste.analysis.HttpWasteAnalyzer;
+import com.babplanner.backend.common.config.AiServiceProperties;
 import com.babplanner.backend.waste.analysis.WasteAnalyzer;
 import com.babplanner.backend.waste.config.WasteAnalyzerConfig;
 import com.babplanner.backend.waste.config.WasteProperties;
@@ -27,23 +28,24 @@ class WasteAnalyzerConfigTest {
     @TempDir Path storageRoot;
 
     private ApplicationContextRunner runner() {
-        return runner(new WasteProperties());
+        return runner(new AiServiceProperties());
     }
 
-    private ApplicationContextRunner runner(WasteProperties properties) {
+    private ApplicationContextRunner runner(AiServiceProperties aiProperties) {
         WasteImageStorage storage = new LocalWasteImageStorage(storageRoot);
         return new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of())
                 .withUserConfiguration(WasteAnalyzerConfig.class)
                 .withBean(WasteImageStorage.class, () -> storage)
-                .withBean(WasteProperties.class, () -> properties);
+                .withBean(WasteProperties.class, WasteProperties::new)
+                .withBean(AiServiceProperties.class, () -> aiProperties);
     }
 
-    private WasteProperties properties(String mode, String baseUrl, String token) {
-        WasteProperties properties = new WasteProperties();
-        properties.setAnalyzerMode(mode);
-        properties.setAiBaseUrl(baseUrl);
-        properties.setAiServiceToken(token);
+    /** 주소와 토큰은 이제 잔반 전용이 아니라 공통 AI 설정에서 온다. */
+    private AiServiceProperties aiProperties(String baseUrl, String token) {
+        AiServiceProperties properties = new AiServiceProperties();
+        properties.setBaseUrl(baseUrl);
+        properties.setServiceToken(token);
         return properties;
     }
 
@@ -62,10 +64,7 @@ class WasteAnalyzerConfigTest {
     @Test
     @DisplayName("http 모드는 분석 서비스 어댑터만 등록한다")
     void httpModeRegistersOnlyTheAdapter() {
-        runner(properties(
-                        "http",
-                        "http://127.0.0.1:8001",
-                        "test-only-token-not-a-real-secret"))
+        runner(aiProperties("http://127.0.0.1:8001", "test-only-token-not-a-real-secret"))
                 .withPropertyValues("bapplanner.waste.analyzer-mode=http")
                 .run(context -> {
                     assertThat(context).hasSingleBean(WasteAnalyzer.class);
@@ -95,9 +94,9 @@ class WasteAnalyzerConfigTest {
         WasteImageStorage storage = new LocalWasteImageStorage(storageRoot);
 
         assertThatThrownBy(() -> config.httpWasteAnalyzer(
-                        properties("http", null, "test-only-token-not-a-real-secret"), storage))
+                        aiProperties(null, "test-only-token-not-a-real-secret"), storage))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ai-base-url");
+                .hasMessageContaining("bapplanner.ai.base-url");
     }
 
     @Test
@@ -107,27 +106,38 @@ class WasteAnalyzerConfigTest {
         WasteImageStorage storage = new LocalWasteImageStorage(storageRoot);
 
         assertThatThrownBy(() -> config.httpWasteAnalyzer(
-                        properties("http", "http://127.0.0.1:8001", "  "), storage))
+                        aiProperties("http://127.0.0.1:8001", "  "), storage))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ai-service-token");
+                .hasMessageContaining("bapplanner.ai.service-token");
     }
 
     @Test
     @DisplayName("주소와 토큰에 기본값이 없다")
     void aiSettingsHaveNoDefaults() {
-        WasteProperties properties = new WasteProperties();
+        AiServiceProperties ai = new AiServiceProperties();
 
-        assertThat(properties.getAiBaseUrl()).isNull();
-        assertThat(properties.getAiServiceToken()).isNull();
-        assertThat(properties.getAnalyzerMode()).isNull();
+        assertThat(ai.getBaseUrl()).isNull();
+        assertThat(ai.getServiceToken()).isNull();
+        assertThat(new WasteProperties().getAnalyzerMode()).isNull();
     }
 
     @Test
     @DisplayName("시간 제한에 합리적인 기본값이 있다")
     void timeoutsHaveDefaults() {
-        WasteProperties properties = new WasteProperties();
+        AiServiceProperties ai = new AiServiceProperties();
 
-        assertThat(properties.getAiConnectTimeout().toSeconds()).isEqualTo(5);
-        assertThat(properties.getAiReadTimeout().toSeconds()).isEqualTo(30);
+        assertThat(ai.getConnectTimeout().toSeconds()).isEqualTo(5);
+        assertThat(ai.getReadTimeout().toSeconds()).isEqualTo(30);
+    }
+
+    @Test
+    @DisplayName("잔반 전용 AI 주소를 따로 두지 않는다")
+    void wasteHasNoPrivateAiEndpoint() throws Exception {
+        String source = java.nio.file.Files.readString(java.nio.file.Path.of(
+                "src/main/java/com/babplanner/backend/waste/config/WasteProperties.java"));
+
+        // 기능마다 주소를 따로 두면 셋 중 하나만 다른 곳을 가리키는 배포가
+        // 가능해지고, 그 상태는 기동 로그만 봐서는 드러나지 않는다.
+        assertThat(source).doesNotContain("aiBaseUrl").doesNotContain("aiServiceToken");
     }
 }
