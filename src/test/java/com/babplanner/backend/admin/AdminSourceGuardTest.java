@@ -136,9 +136,9 @@ class AdminSourceGuardTest {
         try (Stream<Path> paths = Files.list(MIGRATIONS)) {
             List<String> names = paths.map(path -> path.getFileName().toString()).sorted().toList();
 
-            // V21만 새로 늘었다. 앞의 것은 이미 실제 DB에 적용됐다.
-            assertThat(names).contains("V21__add_notice_published.sql");
-            assertThat(names).hasSize(21);
+            // V22만 새로 늘었다. 앞의 것은 이미 실제 DB에 적용됐다.
+            assertThat(names).contains("V22__create_congestion_observations.sql");
+            assertThat(names).hasSize(22);
         }
     }
 
@@ -148,12 +148,59 @@ class AdminSourceGuardTest {
         for (Source source : sourcesUnder(MAIN)) {
             assertThat(source.code())
                     .as("%s", source.path())
-                    .doesNotContain("/api/v1/admin/dashboard")
-                    .doesNotContain("/api/v1/admin/congestion")
-                    .doesNotContain("/api/v1/admin/waste")
                     .doesNotContain("/api/v1/admin/demand-predictions")
-                    .doesNotContain("/api/v1/admin/procurement-recommendations");
+                    .doesNotContain("/api/v1/admin/procurement-recommendations")
+                    .doesNotContain("/internal/v1/congestion-observations")
+                    .doesNotContain("/internal/v1/ai/demand")
+                    .doesNotContain("/internal/v1/ai/procurement");
         }
+    }
+
+    @Test
+    @DisplayName("예측과 발주 추천을 흉내 내는 구현이 없다")
+    void noPretendPredictionServices() throws IOException {
+        for (Source source : sourcesUnder(MAIN)) {
+            // 모델이 없는데 값이 나오면 관리자는 그 값으로 발주를 넣는다.
+            assertThat(source.code())
+                    .as("%s", source.path())
+                    .doesNotContain("DemandPredictionService")
+                    .doesNotContain("ProcurementRecommendationService");
+        }
+    }
+
+    @Test
+    @DisplayName("대시보드가 예시 숫자를 내보내지 않는다")
+    void dashboardInventsNoNumbers() throws IOException {
+        String dashboard = Files.readString(ADMIN.resolve("service/AdminDashboardService.java"));
+
+        // 528, 370은 OpenAPI 예시이자 Figma 화면에 찍힌 값이다. 실행 결과로
+        // 나오면 안 된다.
+        assertThat(dashboard).doesNotContain("528").doesNotContain("370");
+    }
+
+    @Test
+    @DisplayName("집계를 자바 메모리에서 돌리지 않는다")
+    void aggregationHappensInTheDatabase() throws IOException {
+        String repository = Files.readString(
+                MAIN.resolve(
+                        "com/babplanner/backend/waste/repository/WasteSubmissionRepository.java"));
+        String service = Files.readString(ADMIN.resolve("service/AdminWasteService.java"));
+
+        assertThat(repository).contains("avg(w.wasteRate)").contains("group by");
+        // findAll로 다 읽어 자바에서 더하면 데이터가 늘어난 만큼 느려진다.
+        assertThat(service).doesNotContain("findAll").doesNotContain("Collectors.groupingBy");
+    }
+
+    @Test
+    @DisplayName("잔반 집계가 분석된 건만 표본으로 삼는다")
+    void wasteAggregationCountsAnalyzedOnly() throws IOException {
+        String repository = Files.readString(
+                MAIN.resolve(
+                        "com/babplanner/backend/waste/repository/WasteSubmissionRepository.java"));
+
+        assertThat(repository).contains("w.wasteRate is not null");
+        // 기간은 제출 시각이 아니라 메뉴 제공일로 센다.
+        assertThat(repository).contains("m.serviceDate between :from and :to");
     }
 
     @Test

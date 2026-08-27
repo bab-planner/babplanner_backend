@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,8 @@ class AdminNoticeApiTest extends ApiIntegrationTest {
     private static final String MARK = "[관리자테스트] ";
 
     @BeforeEach
-    void removeLeftoversFromPreviousRuns() {
+    @AfterEach
+    void removeNoticesCreatedHere() {
         noticeRepository.deleteAll(noticeRepository
                 .findAllByOrderByImportantDescPublishedAtDescIdDesc()
                 .stream()
@@ -241,5 +243,43 @@ class AdminNoticeApiTest extends ApiIntegrationTest {
                 .isEqualTo(400);
         assertThat(postJson(PATH, payload(Map.of("content", "")), token).getResponse().getStatus())
                 .isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("응답이 공개 여부를 담는다")
+    void responseCarriesPublished() throws Exception {
+        String token = adminToken();
+
+        // 이 값이 없으면 관리 목록만 보고는 어느 공지가 사용자에게 보이는지
+        // 알 수 없다. 미공개 공지가 섞여 있는 목록이라 더 그렇다.
+        assertThat(created(token, Map.of("published", true)).path("published").asBoolean())
+                .isTrue();
+        assertThat(created(token, Map.of("published", false)).path("published").asBoolean())
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("목록과 수정 응답에도 공개 여부가 있다")
+    void listAndUpdateCarryPublished() throws Exception {
+        String token = adminToken();
+        long id = created(token, Map.of("title", MARK + "작성중", "published", false))
+                .path("id")
+                .asLong();
+
+        JsonNode listed = body(getJson(PATH, token)).path("data");
+        JsonNode mine = null;
+        for (JsonNode notice : listed) {
+            if (notice.path("id").asLong() == id) {
+                mine = notice;
+            }
+        }
+
+        assertThat(mine).isNotNull();
+        assertThat(mine.path("published").asBoolean()).isFalse();
+        assertThat(body(putJson(PATH + "/" + id, payload(Map.of("published", true)), token))
+                        .path("data")
+                        .path("published")
+                        .asBoolean())
+                .isTrue();
     }
 }

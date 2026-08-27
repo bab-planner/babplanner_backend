@@ -87,7 +87,8 @@ class NoticeApiTest extends ApiIntegrationTest {
 
         assertThat(item.fieldNames())
                 .toIterable()
-                .containsExactlyInAnyOrder("id", "title", "content", "important", "publishedAt");
+                .containsExactlyInAnyOrder(
+                        "id", "title", "content", "important", "published", "publishedAt");
     }
 
     @Test

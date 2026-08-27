@@ -43,6 +43,7 @@ public enum ErrorCode {
     INVALID_SURVEY_PERIOD(HttpStatus.UNPROCESSABLE_ENTITY, "설문 기간이 올바르지 않습니다."),
     INVALID_SURVEY_QUESTION(HttpStatus.UNPROCESSABLE_ENTITY, "설문 문항을 처리할 수 없습니다."),
     EMPTY_UPDATE(HttpStatus.UNPROCESSABLE_ENTITY, "변경할 내용이 없습니다."),
+    INVALID_DATE_RANGE(HttpStatus.UNPROCESSABLE_ENTITY, "조회 기간이 올바르지 않습니다."),
     INVALID_WASTE_SUBMISSION(HttpStatus.UNPROCESSABLE_ENTITY, "잔반 인증 요청을 처리할 수 없습니다."),
     INVALID_WASTE_IMAGE(HttpStatus.UNPROCESSABLE_ENTITY, "잔반 사진을 처리할 수 없습니다."),
 
