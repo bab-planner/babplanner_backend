@@ -17,6 +17,9 @@ spring:
     locations: classpath:db/migration
 
 bapplanner:
+  # 테스트는 UTC로 고정한다. 시간대 경계 자체를 확인하는 테스트는 자기
+  # 시간대를 명시해서 쓴다.
+  business-zone-id: UTC
   sms:
     mode: noop
   waste:

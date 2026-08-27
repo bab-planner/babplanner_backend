@@ -26,6 +26,10 @@ spring:
       max-request-size: 12MB
 
 bapplanner:
+  # 급식 운영일(LocalDate)을 끊는 IANA 시간대. 예: Asia/Seoul.
+  # 비밀 값이 아니지만 기본값을 두지 않는다. 미설정 시 UTC로 조용히 넘어가면
+  # 자정 무렵 하루가 어긋난 채로 동작하므로 기동에 실패시킨다.
+  business-zone-id: ${BAPPLANNER_BUSINESS_ZONE_ID:}
   # 로컬 E2E용 사용자 fixture. 기본은 꺼져 있고 값도 없다.
   # 켜려면 local/dev 프로필에서 값을 전부 환경 변수로 주입해야 한다.
   dev-user:

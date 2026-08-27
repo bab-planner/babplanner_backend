@@ -2,7 +2,6 @@ package com.babplanner.backend.dev;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -42,7 +41,9 @@ public class DevMenuSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        LocalDate today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC);
+        // 시간대를 여기서 다시 정하지 않는다. Clock이 이미 급식 운영
+        // 시간대를 알고 있고, 씨앗 식단도 그 날짜로 들어가야 한다.
+        LocalDate today = LocalDate.now(clock);
         if (today.equals(SAMPLE_DATE)) {
             return;
         }
