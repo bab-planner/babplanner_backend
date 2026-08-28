@@ -5,7 +5,9 @@
 넣는다.
 
 ```
-1. MySQL      →  2. FastAPI  →  3. Spring  →  4. Admin Web  →  5. Flutter App
+1. MySQL  →  2. FastAPI  →  3. Spring  →  4. Admin Web  →  5. Flutter App
+                                 ↑
+                          6. CCTV Collector (선택)
 ```
 
 앞 단계가 떠 있어야 다음 단계가 동작한다.
@@ -130,6 +132,50 @@ flutter run --dart-define=APP_DATA_MODE=real --dart-define=API_BASE_URL=http://1
 
 ---
 
+## 6. CCTV 수집기 (선택)
+
+녹화 영상에서 혼잡도 관측을 만들어 Spring으로 보낸다. 자세한 것은
+`babplanner_ai/demo/cctv_collector/README.md`.
+
+**기본이 dry-run이다.** `--send` 를 붙여야 서버에 쓴다.
+
+```
+cd babplanner_ai
+
+:: 1) 아무것도 보내지 않고 화면으로만 확인
+.venv-cctv\Scripts\python.exe -m cctv_collector ^
+  --video <VIDEO_PATH> ^
+  --config demo\cctv_collector\cameras\demo_camera.example.yaml ^
+  --limit-seconds 30
+
+:: 2) 실제 전송. 주소와 토큰은 환경 변수로만 준다
+set BAPPLANNER_BACKEND_BASE_URL=<BACKEND_URL>
+set BAPPLANNER_INTERNAL_SERVICE_TOKEN=<your-secret>
+.venv-cctv\Scripts\python.exe -m cctv_collector ^
+  --video <VIDEO_PATH> ^
+  --config demo\cctv_collector\cameras\demo_camera.example.yaml ^
+  --site-id <SITE_ID> --send --limit-seconds 30
+```
+
+`BAPPLANNER_INTERNAL_SERVICE_TOKEN` 은 Spring이 **받는** 토큰이다. Spring이
+FastAPI로 **보내는** `AI_SERVICE_TOKEN` 과 다른 값이다.
+
+`<SITE_ID>` 를 추측하지 않는다. 관리자 웹 상단 급식소 선택기나
+`GET /api/v1/congestion/current?siteId=N` 으로 확인한 값을 쓴다.
+
+**카메라를 처음 다는 경우** ROI와 counting line을 먼저 눈으로 확인한다.
+
+```
+.venv-cctv\Scripts\python.exe -m cctv_collector ^
+  --video <VIDEO_PATH> --config <CAMERA_YAML> --preview-frame 100
+```
+
+> **혼잡 단계 임계값은 시연용이다.** 저장소의 예시는
+> `DEMO_ONLY_UNCALIBRATED` 로 표시되어 있고, 실제 급식소에서 보정한 값이
+> 아니다. 시연에서 "실제 호서대학교 기준"처럼 소개하지 않는다.
+
+---
+
 ## 5분 데모 흐름
 
 ### 사용자 앱
@@ -140,6 +186,21 @@ flutter run --dart-define=APP_DATA_MODE=real --dart-define=API_BASE_URL=http://1
 4. **잔반 인증** — 사진을 올리면 백엔드가 저장하고 FastAPI에 분석을 맡긴다.
    결과가 나올 때까지 화면이 상태를 갱신한다.
    *결과는 fixture가 낸 값이다. 실제 판독이 아니다.*
+
+### CCTV 혼잡도 (수집기를 띄운 경우)
+
+- 관리자 웹 대시보드의 **현재 혼잡도** 카드는 5초마다 스스로 다시 읽는다.
+  수집기를 `--send` 로 돌리면 화면을 건드리지 않아도 인원과 단계가 바뀐다.
+- 사용자 앱 홈은 **아래로 당기면** 다시 읽는다. 배터리를 쓰는 폴링을 넣지
+  않았다.
+- 저장된 출처는 `CCTV_AI` 다. 수집기가 보내는 값이 아니라 서버가 기록한다.
+
+말할 때 주의:
+
+- "AI가 혼잡도를 판정한다" (X) → 인원수는 검출 결과이고, **단계는 운영
+  임계값**이 정한다.
+- "식수를 센다" (X) → 입장 인원은 검증되지 않았고 서버에 저장하지도 않는다.
+- "급식소에서 검증했다" (X) → 공개 감시 데이터(CAVIAR)로 평가했다.
 
 ### 관리자 웹
 
@@ -186,3 +247,7 @@ docker compose up -d        # 빈 DB로 다시 시작
 | 발주 실행이 409 | 같은 식당·날짜·끼니의 예상 식수를 먼저 실행해야 한다 |
 | 관리자 로그인 실패 | 이미 있는 관리자의 비밀번호는 seeder가 덮지 않는다. 처음 만들 때 쓴 값을 쓴다 |
 | 앱이 서버를 안 부름 | `APP_DATA_MODE=real` 과 `API_BASE_URL` 을 둘 다 넣었는지 확인 |
+| 수집기가 전송을 거부 | 카메라 설정에 `congestion_policy` 가 없다. dry-run은 되지만 `--send` 는 임계값을 요구한다 |
+| 수집기 POST가 401 | `BAPPLANNER_INTERNAL_SERVICE_TOKEN` 이 Spring 쪽 값과 다르다 |
+| 202는 오는데 화면이 안 바뀜 | 보낸 `observedAt` 이 저장된 현재값보다 과거다. 수집기는 관측 시각을 실제 시각으로 보내므로 정상 실행에서는 생기지 않는다 |
+| 앱 홈이 예전 값 | 아래로 당겨 새로 고친다. 앱은 폴링하지 않는다 |
