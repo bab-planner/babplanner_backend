@@ -10,6 +10,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,10 +26,15 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>같은 번호가 이미 있으면 아무것도 하지 않는다. 재시작할 때마다 계정을
  * 덮어써서 프로필 수정 결과가 되돌아가는 일이 없어야 한다.
+ *
+ * <p>DevRewardSeeder(@Order(20))가 이 사용자를 찾아 리워드를 붙이므로 그보다
+ * 먼저 실행돼야 한다. @Order가 없으면 LOWEST_PRECEDENCE라 뒤로 밀리고,
+ * 리워드 시더는 사용자를 못 찾아 조용히 아무것도 하지 않는다.
  */
 @Component
 @Profile({"local", "dev"})
 @ConditionalOnProperty(prefix = "bapplanner.dev-user", name = "enabled", havingValue = "true")
+@Order(10)
 public class DevUserSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DevUserSeeder.class);
