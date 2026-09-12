@@ -51,6 +51,12 @@
 | 수요 예측 | `fastapi-fixture-demand-v1` | 입력과 무관하게 항상 100명 |
 | 발주 추천 | `fastapi-fixture-procurement-v1` | 계획 수량 그대로, 조정률 0 |
 
+별도로 **식수 예측 PoC**(`/api/v1/admin/demand-forecasts/*`)가 있다. fixture가 아니라
+FastAPI가 저장된 모델로 계산한 값이지만, 그 모델은 **합성데이터로 학습한 PoC**다.
+응답의 `model.syntheticData: true`와 `disclaimer`가 그것을 알리며, 결과를 저장하지
+않는다. FastAPI는 운영 환경에서 합성데이터 모델을 로드하지 않는다.
+자세한 것은 [demand_forecast_poc.md](demand_forecast_poc.md).
+
 운영 환경에서 fixture를 고르면 기동에 실패한다. 수요와 발주의 기본값은
 `disabled`이고, 꺼진 상태에서 호출하면 503이다. 끈 기능이 fixture로 대신
 답하지 않는다.
