@@ -20,8 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>권한은 SecurityConfig의 {@code /api/v1/admin/**} 규칙이 판단한다.
  *
- * <p>기존 {@code /api/v1/admin/demand-predictions}(실행 이력 저장)와 다른 기능이다.
- * 이쪽은 조건을 받아 예측값을 돌려주기만 하고 저장하지 않는다. 그래서 201이 아니라
+ * <p>조건을 받아 예측값을 돌려주기만 하고 저장하지 않는다. 그래서 201이 아니라
  * 200이다.
  */
 @RestController

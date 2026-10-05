@@ -6,9 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * AI 서비스 호출 설정.
  *
- * <p>잔반 분석, 수요 예측, 발주 추천은 모두 같은 FastAPI 프로세스다. 기능마다
- * 주소와 토큰을 따로 두면 셋 중 하나만 다른 곳을 가리키는 배포가 가능해지고,
- * 그 상태는 기동 로그만 봐서는 드러나지 않는다.
+ * <p>AI 서비스(FastAPI)는 다음 영업일 점심 식수 예측(demand-forecast)만 제공한다.
+ * 주소와 토큰은 이 한 곳에서만 정한다.
  *
  * <p>이 토큰은 Spring이 <em>보내는</em> 쪽이다. 내부 수집 경로가 받는
  * 토큰({@link InternalServiceProperties})과는 다른 비밀 값이다.

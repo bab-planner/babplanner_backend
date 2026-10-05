@@ -15,12 +15,11 @@ import org.springframework.web.client.RestClientResponseException;
 /**
  * FastAPI 식수 예측(demand-forecast) 호출.
  *
- * <p>기존 {@link HttpDemandPredictor}(siteId·serviceDate·mealType만 보내는 계약)와
- * 다른 계약이다. 이쪽은 날씨·학사·메뉴 조건을 보내고, AI 서버가 저장된 모델로
- * 다음 날 중식 식수를 예측한다.
+ * <p>날씨·학사·메뉴 조건을 보내고, AI 서버가 저장된 모델로 다음 날 중식 식수를
+ * 예측한다.
  *
  * <p>주소, 토큰, 시간 제한은 {@link AiRestClientProvider}의 것을 그대로 쓴다.
- * 잔반·수요·발주와 같은 AI 프로세스이고, 한 곳만 설정이 다르면 알아차리기 어렵다.
+ * AI 서비스는 식수 예측만 제공하므로 설정은 이 한 곳이다.
  *
  * <p>응답을 그대로 믿지 않는다. 계약을 벗어난 응답은 관리자에게 보여 주느니
  * 실패로 끝낸다. 예측 인원이 없는데 0으로 보이거나, 합성데이터 모델인지 모르는

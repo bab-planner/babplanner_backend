@@ -163,18 +163,6 @@ class AdminSourceGuardTest {
     }
 
     @Test
-    @DisplayName("예측과 발주 추천을 흉내 내는 구현이 없다")
-    void noPretendPredictionServices() throws IOException {
-        for (Source source : sourcesUnder(MAIN)) {
-            // 모델이 없는데 값이 나오면 관리자는 그 값으로 발주를 넣는다.
-            assertThat(source.code())
-                    .as("%s", source.path())
-                    .doesNotContain("DemandPredictionService")
-                    .doesNotContain("ProcurementRecommendationService");
-        }
-    }
-
-    @Test
     @DisplayName("대시보드가 예시 숫자를 내보내지 않는다")
     void dashboardInventsNoNumbers() throws IOException {
         String dashboard = Files.readString(ADMIN.resolve("service/AdminDashboardService.java"));

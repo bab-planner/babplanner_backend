@@ -35,24 +35,15 @@ docker compose up -d
 ```
 cd babplanner_ai
 APP_ENV=local
-WASTE_MODEL_MODE=fixture
-DEMAND_MODEL_MODE=fixture
-PROCUREMENT_MODEL_MODE=fixture
 AI_SERVICE_TOKEN=<your-secret-32chars-or-more>
 
 .venv/Scripts/python.exe -m uvicorn babplanner_ai.main:app --host 127.0.0.1 --port 8001
 ```
 
-> **fixture는 AI가 아니다.**
-> 세 기능 모두 실제 모델이 없다. fixture는 입력을 보지 않고 정해진 값을
-> 돌려준다. 데모에서 나오는 숫자는 경계가 연결됐다는 증거일 뿐이고, 예측이나
-> 추천으로 읽으면 안 된다.
->
-> | 기능 | `modelVersion` | 돌려주는 값 |
-> |---|---|---|
-> | 잔반 분석 | `fastapi-fixture-waste-v1` | 이미지를 판독하지 않은 고정값 |
-> | 수요 예측 | `fastapi-fixture-demand-v1` | 항상 100명 |
-> | 발주 추천 | `fastapi-fixture-procurement-v1` | 계획 수량 그대로, 조정률 0 |
+> AI 서비스는 **다음 영업일 점심 식수 예측**(`/internal/v1/ai/demand-forecast/*`)만
+> 제공한다. 현재 모델은 합성데이터로 학습한 PoC이며 응답에 그 사실이 표시된다
+> (docs/demand_forecast_poc.md). 혼잡도는 AI 서비스를 거치지 않고 CCTV 수집기가
+> Spring에 직접 보낸다.
 
 ---
 
@@ -180,9 +171,8 @@ FastAPI로 **보내는** `AI_SERVICE_TOKEN` 과 다른 값이다.
 1. **로그인** — 개발용 사용자 계정(`DEV_USER_*`)으로 들어간다.
 2. **메뉴** — 날짜·식사 구분으로 식단과 알레르기 정보를 본다.
 3. **혼잡도** — 현재 혼잡도를 본다.
-4. **잔반 인증** — 사진을 올리면 백엔드가 저장하고 FastAPI에 분석을 맡긴다.
-   결과가 나올 때까지 화면이 상태를 갱신한다.
-   *결과는 fixture가 낸 값이다. 실제 판독이 아니다.*
+4. **잔반 인증** — 사진을 올리면 PENDING으로 저장된다. 관리자가 승인하면
+   포인트가 적립된다(docs/waste_review.md).
 
 ### CCTV 혼잡도 (수집기를 띄운 경우)
 
@@ -202,17 +192,10 @@ FastAPI로 **보내는** `AI_SERVICE_TOKEN` 과 다른 값이다.
 ### 관리자 웹
 
 5. **대시보드** — 현재 혼잡도와 오늘 잔반 요약을 본다.
-   예상 식수와 발주 추천 칸은 비어 있다. 버그가 아니라, 대시보드에 식사
-   구분이 없어서 어느 끼니를 대표할지 정해진 적이 없기 때문이다.
-6. **잔반 분석** — 기간별 평균 잔반률과 메뉴별 잔반률.
-7. **예상 식수** — 실행하면 FastAPI를 거쳐 값이 저장된다.
-   화면에 **"개발용 fixture — 실제 AI 예측이 아닙니다"** 배지가 함께 뜬다.
-8. **발주 추천** — 계획 식재료를 입력하고 실행한다. 저장된 최신 예측을
-   근거로 삼으므로 7번을 먼저 해야 한다.
-   *fixture는 계획 수량을 그대로 돌려준다. 절감 추천이 아니다.*
+6. **잔반 검토** — 대기 중인 제출의 사진을 보고 승인/반려한다.
+7. **식수 예측** — 다음 영업일 점심 식수를 예측한다(합성데이터 PoC 모델).
 
-데모 중에 숫자를 소개할 때는 fixture라는 사실을 함께 말한다. 그러지 않으면
-듣는 사람은 그것을 예측 결과로 받아들인다.
+데모 중에 식수 숫자를 소개할 때는 합성데이터로 학습한 PoC라는 사실을 함께 말한다.
 
 ---
 
@@ -240,8 +223,7 @@ docker compose up -d        # 빈 DB로 다시 시작
 |---|---|
 | 기동 실패: `bapplanner.business-zone-id를 설정해야 합니다` | `BAPPLANNER_BUSINESS_ZONE_ID` 누락. 의도된 fail-fast다 |
 | 기동 실패: `bapplanner.internal.service-token 이 필요합니다` | 내부 토큰 누락 |
-| 예측/발주 실행이 503 | FastAPI가 꺼져 있거나 `DEMAND_MODEL_MODE`/`PROCUREMENT_MODEL_MODE` 가 `disabled` |
-| 발주 실행이 409 | 같은 식당·날짜·끼니의 예상 식수를 먼저 실행해야 한다 |
+| 식수 예측 실행이 503 | FastAPI가 꺼져 있거나 모델 artifact를 찾지 못했다 |
 | 관리자 로그인 실패 | 이미 있는 관리자의 비밀번호는 seeder가 덮지 않는다. 처음 만들 때 쓴 값을 쓴다 |
 | 앱이 서버를 안 부름 | `APP_DATA_MODE=real` 과 `API_BASE_URL` 을 둘 다 넣었는지 확인 |
 | 수집기가 전송을 거부 | 카메라 설정에 `congestion_policy` 가 없다. dry-run은 되지만 `--send` 는 임계값을 요구한다 |

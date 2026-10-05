@@ -24,8 +24,8 @@ FastAPI AI 추론 서버
   인증이 없고, 서비스 토큰으로 호출자가 Spring인지만 확인한다.
 - Spring은 모델을 모른다. 무엇을 보냈는지, 몇 명이 나왔는지, 어느 모델(version)이
   냈는지, 합성데이터 모델인지, 경고가 있는지만 다룬다.
-- 기존 `/api/v1/admin/demand-predictions`(siteId·serviceDate·mealType, 실행 이력 저장)와
-  **다른 기능**이다. 이쪽은 저장하지 않는다.
+- AI 서비스가 제공하는 유일한 예측 기능이다. 예전의 일반 수요 예측과 발주 추천은
+  제거되었다. 이 기능은 결과를 저장하지 않는다.
 
 ## 관리자 API
 
@@ -145,7 +145,7 @@ FastAPI에 닿았는데 모델이 없으면 200 + `available: false` + `reason`
 | `AI_SERVICE_BASE_URL` | `bapplanner.ai.base-url` | 로컬 `http://127.0.0.1:8001`, 컨테이너 `http://ai-server:8000` |
 | `AI_SERVICE_TOKEN` | `bapplanner.ai.service-token` | FastAPI의 `AI_SERVICE_TOKEN`과 **같은 값** |
 
-**시간 제한.** 잔반·수요·발주가 함께 쓰는 `bapplanner.ai.connect-timeout: 5s`,
+**시간 제한.** `bapplanner.ai.connect-timeout: 5s`,
 `read-timeout: 30s`를 그대로 따른다. 한 기능만 다른 시간 제한을 가지면 알아차리기
 어렵다는 기존 방침 때문이다. 식수 추론은 실측 수십 ms라, 필요해지면 식수 예측 전용으로
 더 짧은 read timeout을 따로 두는 것을 검토한다.
@@ -165,7 +165,6 @@ FastAPI에 닿았는데 모델이 없으면 200 + `available: false` + `reason`
 FastAPI (babplanner_ai):
 
     APP_ENV=local
-    WASTE_MODEL_MODE=fixture
     AI_SERVICE_TOKEN=<same-token>
     uvicorn babplanner_ai.main:app --host 127.0.0.1 --port 8001
 

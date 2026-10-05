@@ -27,7 +27,7 @@ FastAPI와 MySQL은 브라우저나 앱이 직접 부르지 않는다. 백엔드
 | `PHONE_VERIFICATION_HMAC_KEY` | 예 | 임의 32바이트 이상 | 별도 관리 | **예** | `JWT_SIGNING_KEY`와 **다른 값**이어야 한다 |
 | `BAPPLANNER_BUSINESS_ZONE_ID` | 예 | `Asia/Seoul` | `Asia/Seoul` | 아니오 | 급식 운영일을 끊는 IANA 시간대. 미설정/오타면 기동 실패 |
 | `BAPPLANNER_INTERNAL_SERVICE_TOKEN` | 예 | 임의 32자 이상 | 별도 관리 | **예** | `/internal/v1/**` 이 **받는** 토큰 |
-| `AI_SERVICE_BASE_URL` | 조건부 | `http://127.0.0.1:8001` | 내부 주소 | 아니오 | 예측·발주 실행에 필요 |
+| `AI_SERVICE_BASE_URL` | 조건부 | `http://127.0.0.1:8001` | 내부 주소 | 아니오 | 다음 영업일 점심 식수 예측(`/admin/demand-forecasts/*`)에 필요 |
 | `AI_SERVICE_TOKEN` | 조건부 | 임의 32자 이상 | 별도 관리 | **예** | Spring이 FastAPI로 **보내는** 토큰 |
 | `SMS_MODE` | 예 | `noop` | 실제 어댑터 | 아니오 | 기본값 없음. 운영에서 `noop`이 조용히 선택되지 않게. **`noop`이면 send-code 응답에 `developmentCode`가 포함되므로 공개 환경에서 절대 쓰지 말 것** (docs/account_deletion.md) |
 | `WASTE_STORAGE_MODE` | 예 | `local` | (아래 참고) | 아니오 | 기본값 없음 |
@@ -77,19 +77,17 @@ UTC로 끊게 되고, 한국에서는 자정부터 오전 9시까지 대시보�
 |---|---|---|---|---|---|
 | `APP_ENV` | 예 | `local` | `production` | 아니오 | 기본값 없음 |
 | `AI_SERVICE_TOKEN` | 예 | Spring과 **같은 값** | 별도 관리 | **예** | 32자 미만이면 기동 실패 |
-| `WASTE_MODEL_MODE` | 예 | `fixture` | 실제 어댑터 | 아니오 | 기본값 없음. production + fixture는 기동 실패 |
-| `DEMAND_MODEL_MODE` | 아니오 | `fixture` | `disabled` | 아니오 | 기본 `disabled`. production + fixture는 기동 실패 |
-| `PROCUREMENT_MODEL_MODE` | 아니오 | `fixture` | `disabled` | 아니오 | 위와 같다 |
-| `AI_MAX_IMAGE_BYTES` | 아니오 | — | — | 아니오 | 기본 10MB |
+| `DEMAND_FORECAST_MODE` | 아니오 | 비움(`strict`) | **`poc`** | 아니오 | 합성 PoC 식수 예측 모델을 production에서 서비스하려면 명시해야 한다. 기본 `strict`는 production에서 합성 모델을 막는다(status unavailable, predict 503) |
 | `DEMAND_FORECAST_MODEL_PATH` | 아니오 | 비움 | 마운트 경로 | 아니오 | 식수 예측 모델 artifact. 기본은 저장소의 `research/demand_forecasting/models/` |
 | `DEMAND_FORECAST_METADATA_PATH` | 아니오 | 비움 | 마운트 경로 | 아니오 | 위 artifact의 metadata.json |
 | `DEMAND_HISTORY_PATH` | 아니오 | 비움 | 마운트 경로 | 아니오 | 과거 식수 이력(지금은 합성 CSV) |
 | `DEMAND_CCTV_LOG_PATH` | 아니오 | 비움 | 마운트 경로 | 아니오 | 과거 CCTV 이력(지금은 합성 CSV) |
 
-`disabled`는 fixture가 아니다. 끄면 숫자를 만들지 않고 503을 돌려준다.
-
-식수 예측 PoC(`/internal/v1/ai/demand-forecast/*`)는 위 모드와 무관하게 저장된 모델
-artifact로 동작한다. 파일이 없으면 FastAPI는 뜨고 식수 예측만 503이다. 합성데이터
+AI 서비스는 **다음 영업일 점심 식수 예측**(`/internal/v1/ai/demand-forecast/*`) 하나만
+제공한다. 잔반 분석, 일반 수요 예측, 발주 추천 endpoint와 그 모드 설정
+(`WASTE_MODEL_MODE`, `DEMAND_MODEL_MODE`, `PROCUREMENT_MODEL_MODE`)은 Spring이 더 이상 쓰지
+않는다. (혼잡도는 CCTV 수집기가 `/internal/v1/congestion-observations`로 직접 보낸다.)
+식수 예측은 저장된 모델 artifact로 동작한다. 파일이 없으면 FastAPI는 뜨고 식수 예측만 503이다. 합성데이터
 모델은 `APP_ENV=production`에서 로드하지 않는다. Spring 쪽 설정은 위의
 `AI_SERVICE_BASE_URL`/`AI_SERVICE_TOKEN` 그대로다. 연동 전체는
 [demand_forecast_poc.md](demand_forecast_poc.md).

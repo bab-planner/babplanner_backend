@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 관리자 대시보드. 아직 채울 수 없는 칸은 비어 있다. */
+/** 관리자 대시보드. 현재 혼잡도와 오늘 잔반 요약. */
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
 public class AdminDashboardController {

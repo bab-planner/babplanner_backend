@@ -4,15 +4,13 @@ import com.babplanner.backend.admin.dto.AdminDashboardResponse;
 import com.babplanner.backend.congestion.service.CongestionService;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 관리자 대시보드.
  *
- * <p>실제로 저장돼 있는 것만 모은다. 지금 채울 수 있는 칸은 현재 혼잡도와
- * 오늘 잔반 요약 둘뿐이고, 예측과 발주 추천은 만들 근거가 없어 비워 둔다.
+ * <p>실제로 저장돼 있는 것만 모은다. 칸은 현재 혼잡도와 오늘 잔반 요약 둘이다.
  * 화면을 채우려고 표본값이나 예시값을 넣지 않는다.
  *
  * <p>"오늘"은 주입된 Clock의 시간대를 따른다. 급식 제공일은 한국 날짜지만
@@ -38,12 +36,7 @@ public class AdminDashboardService {
         LocalDate today = LocalDate.now(clock);
 
         return new AdminDashboardResponse(
-                // 수요 예측 모델이 없다. 여기에 숫자가 들어가는 순간 그 숫자로
-                // 식수와 발주가 정해지므로, 모르는 것은 모른다고 둔다.
-                null,
-                null,
                 congestionService.findCurrent(siteId).orElse(null),
-                adminWasteService.getSummary(today, today),
-                List.of());
+                adminWasteService.getSummary(today, today));
     }
 }

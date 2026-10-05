@@ -16,8 +16,9 @@ import org.junit.jupiter.api.Test;
 /**
  * "이렇게는 하지 않기로 한 것"을 소스에서 고정한다.
  *
- * <p>예측과 발주는 숫자가 그대로 실제 발주로 이어진다. 어디선가 그럴듯한
- * 값을 만들기 시작하면 실행 테스트로 잡히기 전에 배포될 수 있다.
+ * <p>AI 범위는 CCTV 혼잡도와 다음 영업일 점심 식수 예측뿐이다. 제거된 기능이
+ * 되살아나거나 그럴듯한 값을 만드는 코드가 생기면 실행 테스트로 잡히기 전에
+ * 배포될 수 있다.
  */
 class PredictiveSourceGuardTest {
 
@@ -48,19 +49,42 @@ class PredictiveSourceGuardTest {
     }
 
     @Test
-    @DisplayName("백엔드가 예측이나 추천 숫자를 스스로 만들지 않는다")
-    void noLocalPredictionImplementation() throws IOException {
+    @DisplayName("제거된 AI 기능의 흔적이 백엔드에 없다")
+    void noLegacyAiFeatureReferences() throws IOException {
+        // AI 서비스에서 쓰는 것은 식수 예측(/internal/v1/ai/demand-forecast)뿐이다.
+        List<String> forbidden = List.of(
+                "/internal/v1/ai/demand/predict",
+                "/internal/v1/ai/procurement",
+                "/internal/v1/ai/waste",
+                "/admin/demand-predictions",
+                "/admin/procurement-recommendations",
+                "HttpDemandPredictor",
+                "ProcurementRecommender");
         for (Source source : sources()) {
-            // 이런 구현이 있으면 AI 서비스가 꺼져 있어도 화면에는 값이 뜬다.
-            assertThat(source.code())
-                    .as("%s", source.path())
-                    .doesNotContain("FakeDemandPredictor")
-                    .doesNotContain("FakeDemandPredictionService")
-                    .doesNotContain("FixtureDemandPredictor")
-                    .doesNotContain("FakeProcurementRecommender")
-                    .doesNotContain("FakeProcurementRecommendationService")
-                    .doesNotContain("FixtureProcurementRecommender");
+            for (String text : forbidden) {
+                assertThat(source.code()).as("%s: %s", source.path(), text).doesNotContain(text);
+            }
         }
+        for (String name : List.of("application.yml", "application-local.yml", "application-dev.yml")) {
+            Path path = Path.of("src/main/resources").resolve(name);
+            if (!Files.exists(path)) {
+                continue;
+            }
+            String yaml = Files.readString(path);
+            for (String text : List.of("DEMAND_MODEL_MODE", "PROCUREMENT_MODEL_MODE", "WASTE_MODEL_MODE")) {
+                assertThat(yaml).as("%s: %s", name, text).doesNotContain(text);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("식수 예측 호출은 남아 있다")
+    void demandForecastEndpointRemains() throws IOException {
+        boolean found = false;
+        for (Source source : sources()) {
+            found |= source.code().contains("/internal/v1/ai/demand-forecast");
+        }
+        assertThat(found).isTrue();
     }
 
     @Test
@@ -89,25 +113,6 @@ class PredictiveSourceGuardTest {
                     .doesNotContain("CongestionLevel.VERY_CROWDED")
                     .doesNotContain("peopleCount >")
                     .doesNotContain("peopleCount <");
-        }
-    }
-
-    @Test
-    @DisplayName("식단 구성 항목을 식재료로 바꾸지 않는다")
-    void menuItemsAreNeverTreatedAsIngredients() throws IOException {
-        for (Source source : sources()) {
-            if (!source.path().contains("/procurement/") && !source.path().contains("Procurement")) {
-                continue;
-            }
-            // Menu.items에는 조리된 음식 이름이 들어갈 수 있고 구매 단위도
-            // 수량도 없다. ProcurementRun.getItems()는 자기 추천 항목이므로
-            // 이름만 보고 막지 않고, 식단을 실제로 읽는지를 본다.
-            assertThat(source.code())
-                    .as("%s", source.path())
-                    .doesNotContain("MenuRepository")
-                    .doesNotContain("menu.domain.Menu;")
-                    .doesNotContain("menu.getItems")
-                    .doesNotContain("menu.getName");
         }
     }
 
@@ -142,19 +147,6 @@ class PredictiveSourceGuardTest {
                     .doesNotContain("for (int attempt")
                     .doesNotContain("while (attempt");
         }
-    }
-
-    @Test
-    @DisplayName("대시보드에 fixture 결과를 연결하지 않았다")
-    void dashboardIsStillNotWiredToPredictions() throws IOException {
-        String dashboard = Files.readString(
-                MAIN.resolve("com/babplanner/backend/admin/service/AdminDashboardService.java"));
-
-        // 대시보드에는 mealType이 없다. 어느 끼니의 예측을 한 숫자로 보여
-        // 줄지 정해진 적이 없으므로 아무거나 고르지 않는다.
-        assertThat(dashboard)
-                .doesNotContain("DemandPredictionRepository")
-                .doesNotContain("ProcurementRunRepository");
     }
 
     @Test
@@ -245,7 +237,7 @@ class PredictiveSourceGuardTest {
     @DisplayName("서비스 날짜를 서버 시간대로 다시 해석하지 않는다")
     void serviceDateIsNeverReinterpreted() throws IOException {
         for (Source source : sources()) {
-            if (!source.path().contains("/demand/") && !source.path().contains("/procurement/")) {
+            if (!source.path().contains("/demand/")) {
                 continue;
             }
             // 요청에 적힌 날짜와 저장된 날짜가 다르면 아무도 설명할 수 없다.
