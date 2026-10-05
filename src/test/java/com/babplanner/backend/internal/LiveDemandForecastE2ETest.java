@@ -50,7 +50,6 @@ class LiveDemandForecastE2ETest extends ApiIntegrationTest {
         body.put("humidity", 60.0);
         body.put("menuCategory", "WESTERN");
         body.put("mainMenu", "돈까스");
-        body.put("menuPopularity", 0.9);
         body.put("specialMenu", false);
         return body;
     }

@@ -28,7 +28,6 @@ public record DemandForecastAiRequest(
         double humidity,
         String menuCategory,
         String mainMenu,
-        double menuPopularity,
         boolean specialMenu) {
 
     /**

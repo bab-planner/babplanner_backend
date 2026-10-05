@@ -91,10 +91,8 @@ class AdminDashboardBusinessZoneTest extends ApiIntegrationTest {
     private void analyzed(Menu menu, long userId, double wasteRate) {
         WasteSubmission submission = new WasteSubmission(
                 userId, menu.getId(), "key-" + wasteRate, clock.instant(), clock.instant());
-        submission.transitionTo(WasteSubmissionStatus.VERIFYING, clock.instant());
-        submission.transitionTo(WasteSubmissionStatus.ANALYZING, clock.instant());
-        submission.applyAnalysis(wasteRate, 0.9, "test-model", clock.instant());
-        submission.transitionTo(WasteSubmissionStatus.APPROVED, clock.instant());
+        submission.applyMeasurement(wasteRate, 0.9, clock.instant());
+        submission.markReviewed(WasteSubmissionStatus.APPROVED, 100, null, clock.instant());
         wasteSubmissionRepository.save(submission);
     }
 

@@ -15,6 +15,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -110,6 +111,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
             HttpRequestMethodNotSupportedException exception) {
         return respond(ErrorCode.METHOD_NOT_ALLOWED, null);
+    }
+
+    /**
+     * 업로드 크기 초과. 업로드는 잔반 사진뿐이라 잔반 이미지 오류로 응답한다.
+     * 잡지 않으면 500이 된다.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUploadTooLarge(
+            MaxUploadSizeExceededException exception) {
+        return respond(ErrorCode.INVALID_WASTE_IMAGE, null);
     }
 
     @ExceptionHandler(Exception.class)

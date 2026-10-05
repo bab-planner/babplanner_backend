@@ -53,7 +53,6 @@ public record DemandForecastResponse(
             double humidity,
             MenuCategory menuCategory,
             String mainMenu,
-            double menuPopularity,
             boolean specialMenu) {}
 
     /** @param version 모델 파일 해시 앞 12자리. 같은 값이면 같은 모델이다 */
@@ -85,7 +84,6 @@ public record DemandForecastResponse(
                         request.humidity(),
                         request.menuCategory(),
                         request.mainMenu(),
-                        request.menuPopularity(),
                         request.specialMenu()),
                 new Model(model.name(), model.version(), model.syntheticData(), model.trainedAt()),
                 response.disclaimer(),

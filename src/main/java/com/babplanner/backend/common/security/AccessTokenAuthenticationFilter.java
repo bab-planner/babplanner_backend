@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.babplanner.backend.user.repository.UserRepository;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.http.HttpHeaders;
@@ -26,9 +27,12 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenService jwtTokenService;
+    private final UserRepository userRepository;
 
-    public AccessTokenAuthenticationFilter(JwtTokenService jwtTokenService) {
+    public AccessTokenAuthenticationFilter(
+            JwtTokenService jwtTokenService, UserRepository userRepository) {
         this.jwtTokenService = jwtTokenService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -40,6 +44,8 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
             String token = header.substring(BEARER_PREFIX.length()).trim();
             jwtTokenService
                     .parseAccessToken(token)
+                    // 탈퇴한 사용자의 토큰은 만료 전이어도 인증하지 않는다(401).
+                    .filter(user -> userRepository.existsById(user.id()))
                     .ifPresent(user -> {
                         var authorities =
                                 List.of(new SimpleGrantedAuthority("ROLE_" + user.role().name()));

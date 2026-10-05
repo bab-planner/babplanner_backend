@@ -44,7 +44,6 @@ FastAPI AI 추론 서버
   "humidity": 60.0,
   "menuCategory": "WESTERN",
   "mainMenu": "돈까스",
-  "menuPopularity": 0.9,
   "specialMenu": false
 }
 ```
@@ -59,7 +58,7 @@ FastAPI AI 추론 서버
 | `date` 평일 | 400, `details.fields.dateOnWeekday` |
 | `semester` 1~2, `semesterWeek` 1~16 | 400 |
 | `temperature` -30~45, `rainfall` 0~500, `humidity` 0~100 | 400 |
-| `menuPopularity` 0~1, `mainMenu` 1~50자 | 400 |
+| `mainMenu` 1~50자 | 400 |
 | `menuCategory` enum 이름 | 400 (한글 라벨도 거절) |
 
 범위는 FastAPI와 같게 두었다. 최종 판단은 FastAPI 계약이 한다.
@@ -84,7 +83,7 @@ FastAPI AI 추론 서버
       "examPeriod": false, "holiday": false, "campusEvent": false,
       "temperature": 24.0, "rainfall": 0.0, "humidity": 60.0,
       "menuCategory": "WESTERN", "mainMenu": "돈까스",
-      "menuPopularity": 0.9, "specialMenu": false
+      "specialMenu": false
     },
     "model": {
       "name": "lightgbm",
@@ -199,11 +198,16 @@ Spring (babplanner_backend), `docs/mvp_demo_runbook.md`의 DB·키 설정에 더
 
 | 입력 | 현재 | 향후 |
 |---|---|---|
-| `menuPopularity` | 클라이언트가 보내는 **PoC 시뮬레이션 값** | 과거 실제 메뉴별 식수 기록으로 Spring 또는 AI feature pipeline이 자동 계산. 일반 관리자에게 0.9 같은 ML feature 값을 받지 않는다 |
-| `temperature`, `rainfall`, `humidity` | 입력값 | Spring이 기상예보 API로 D-1 예보를 받아 자동 구성 |
+| `temperature`, `rainfall`, `humidity` | 예측 시점에 알 수 있는 D-1 기상 **예보값**(예보 기온·강수량·습도)을 관리자가 수동 입력. 기상 API 연동은 없음 | 현재 범위에서는 변경 계획 없음 |
 | `semester`, `semesterWeek`, `examPeriod`, `holiday`, `campusEvent` | 입력값 | Spring DB의 학사일정으로 자동 계산 |
 | `menuCategory`, `mainMenu` | 입력값 | 등록된 식단(Menu)에서 가져오기 |
 | 결과 저장 | 안 함 | 저장한다면 modelVersion·syntheticData·forecastDate·predictedMealCount·createdAt 함께 |
+
+## 입력 의미와 한계
+
+- `temperature`, `rainfall`, `humidity`는 예측 시점에 알 수 있는 D-1 기상 예보값(예보 기온·예보 강수량·예보 습도)이다. 관리자가 수동으로 입력하며, 기상 API 연동은 없다.
+- 메뉴 인기도(`menuPopularity`)는 계약에서 제거했다. 현재 얻을 수 없는 시뮬레이션 가정이었기 때문이다. 실제 운영 데이터가 쌓이면 같은 메뉴의 과거 평균 식수처럼 계산 가능한 feature로 대체할 수 있다. 지금 새 feature를 추가하지는 않는다.
+- CCTV 관련 feature는 전 운영일 또는 전주 같은 요일의 값이다. CCTV가 성능을 개선한다고 주장하지 않는다. CCTV를 포함하는 구조가 합성 환경에서 검증됐을 뿐이며, 실제 기여도는 운영 데이터로 평가해야 한다.
 
 ## 코드 위치
 

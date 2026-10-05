@@ -27,12 +27,12 @@ FastAPI와 MySQL은 브라우저나 앱이 직접 부르지 않는다. 백엔드
 | `PHONE_VERIFICATION_HMAC_KEY` | 예 | 임의 32바이트 이상 | 별도 관리 | **예** | `JWT_SIGNING_KEY`와 **다른 값**이어야 한다 |
 | `BAPPLANNER_BUSINESS_ZONE_ID` | 예 | `Asia/Seoul` | `Asia/Seoul` | 아니오 | 급식 운영일을 끊는 IANA 시간대. 미설정/오타면 기동 실패 |
 | `BAPPLANNER_INTERNAL_SERVICE_TOKEN` | 예 | 임의 32자 이상 | 별도 관리 | **예** | `/internal/v1/**` 이 **받는** 토큰 |
-| `AI_SERVICE_BASE_URL` | 조건부 | `http://127.0.0.1:8001` | 내부 주소 | 아니오 | 예측·발주 실행과 `WASTE_ANALYZER_MODE=http` 에 필요 |
+| `AI_SERVICE_BASE_URL` | 조건부 | `http://127.0.0.1:8001` | 내부 주소 | 아니오 | 예측·발주 실행에 필요 |
 | `AI_SERVICE_TOKEN` | 조건부 | 임의 32자 이상 | 별도 관리 | **예** | Spring이 FastAPI로 **보내는** 토큰 |
-| `SMS_MODE` | 예 | `noop` | 실제 어댑터 | 아니오 | 기본값 없음. 운영에서 `noop`이 조용히 선택되지 않게 |
+| `SMS_MODE` | 예 | `noop` | 실제 어댑터 | 아니오 | 기본값 없음. 운영에서 `noop`이 조용히 선택되지 않게. **`noop`이면 send-code 응답에 `developmentCode`가 포함되므로 공개 환경에서 절대 쓰지 말 것** (docs/account_deletion.md) |
 | `WASTE_STORAGE_MODE` | 예 | `local` | (아래 참고) | 아니오 | 기본값 없음 |
 | `WASTE_LOCAL_ROOT` | 조건부 | 로컬 디렉터리 | — | 아니오 | `storage-mode=local` 일 때만 |
-| `WASTE_ANALYZER_MODE` | 예 | `fake` 또는 `http` | `http` | 아니오 | 기본값 없음 |
+| `REWARD_WASTE_APPROVAL_POINTS` | 아니오 | `100` | `100` | 아니오 | 관리자가 잔반 인증을 APPROVED로 바꿀 때 지급 포인트(`bapplanner.reward.waste-approval-points`). 0 이상 정수, 음수면 기동 실패. 제출 한 건당 한 번만 지급(DB unique). 쿠폰 발급 규칙은 미정이라 `couponIssued`는 항상 false |
 | `DEV_ADMIN_ENABLED` | 아니오 | `true` | **false** | 아니오 | 기본 `false` |
 | `DEV_ADMIN_PHONE` / `DEV_ADMIN_PASSWORD` / `DEV_ADMIN_STUDENT_ID` / `DEV_ADMIN_NAME` | 조건부 | — | 사용 안 함 | **예**(비밀번호) | `DEV_ADMIN_ENABLED=true` 일 때만. `local`/`dev` 프로필 전용 |
 | `DEV_USER_ENABLED` | 아니오 | `true` | **false** | 아니오 | 기본 `false` |
@@ -45,8 +45,8 @@ Stage 24에서 **제거**됐다. 지금 코드는 이 이름을 읽지 않는다
 
 | 옛 이름 | 새 이름 |
 |---|---|
-| `AI_WASTE_BASE_URL` | `AI_SERVICE_BASE_URL` |
-| `AI_WASTE_SERVICE_TOKEN` | `AI_SERVICE_TOKEN` |
+| `AI_WASTE_BASE_URL` | (삭제됨) |
+| `AI_WASTE_SERVICE_TOKEN` | (삭제됨) |
 
 옛 이름을 설정해도 무시된다. 폴백이 없으므로 배포 스크립트를 반드시 고쳐야 한다.
 

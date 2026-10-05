@@ -75,7 +75,6 @@ SPRING_PROFILES_ACTIVE=local
 SMS_MODE=noop
 WASTE_STORAGE_MODE=local
 WASTE_LOCAL_ROOT=<local-directory>
-WASTE_ANALYZER_MODE=http
 DEV_ADMIN_ENABLED=true
 DEV_ADMIN_PHONE=<demo-phone>
 DEV_ADMIN_PASSWORD=<your-secret>
@@ -85,12 +84,10 @@ DEV_ADMIN_NAME=<demo-name>
 java -jar build/libs/babplanner-backend-0.0.1-SNAPSHOT.jar
 ```
 
-기동하면 Flyway가 V1~V25를 적용한다. 성공하면 로그에 `Started
+기동하면 Flyway가 V1~V29를 적용한다. 성공하면 로그에 `Started
 BabplannerBackendApplication` 이 찍힌다.
 
-`WASTE_ANALYZER_MODE=fake` 로 두면 FastAPI 없이도 돌지만, 그 경우 잔반 결과는
-백엔드 내부 fixture(`spring-fixture-waste-v1`)가 낸 값이다. 프로세스 경계를
-보여 주려면 `http` 로 둔다.
+잔반 인증은 AI가 아니라 관리자가 사진을 보고 직접 승인/반려한다(docs/waste_review.md).
 
 ### 관리자 계정
 

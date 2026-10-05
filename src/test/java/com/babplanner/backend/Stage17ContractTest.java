@@ -46,8 +46,9 @@ class Stage17ContractTest extends ApiIntegrationTest {
     @DisplayName("WasteSubmissionStatus 문자열이 Flutter enum과 같다")
     void statusStringsMatch() {
         assertThat(Arrays.stream(WasteSubmissionStatus.values()).map(Enum::name).toList())
-                .containsExactly(
-                        "RECEIVED", "VERIFYING", "ANALYZING", "APPROVED", "REJECTED", "FAILED");
+                .containsExactlyInAnyOrder(
+                        "PENDING", "RECEIVED", "VERIFYING", "ANALYZING", "APPROVED", "REJECTED",
+                        "FAILED");
     }
 
     @Test

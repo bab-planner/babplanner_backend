@@ -136,13 +136,17 @@ class AdminSourceGuardTest {
         try (Stream<Path> paths = Files.list(MIGRATIONS)) {
             List<String> names = paths.map(path -> path.getFileName().toString()).sorted().toList();
 
-            // V23~V25만 새로 늘었다. 앞의 것은 이미 실제 DB에 적용됐다.
+            // V23~V29만 새로 늘었다. 앞의 것은 이미 실제 DB에 적용됐다.
             assertThat(names)
                     .contains(
                             "V23__add_congestion_observation_metadata.sql",
                             "V24__create_demand_predictions.sql",
-                            "V25__create_procurement_recommendations.sql");
-            assertThat(names).hasSize(25);
+                            "V25__create_procurement_recommendations.sql",
+                            "V26__add_reward_transaction_reference.sql",
+                            "V27__add_phone_verification_failed_attempts.sql",
+                            "V28__add_waste_submission_review.sql",
+                            "V29__remove_dev_sample_data.sql");
+            assertThat(names).hasSize(29);
         }
     }
 

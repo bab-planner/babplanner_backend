@@ -13,6 +13,7 @@ public enum ErrorCode {
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "요청 값을 다시 확인해 주세요."),
     INVALID_VERIFICATION_CODE(HttpStatus.BAD_REQUEST, "인증번호가 올바르지 않거나 만료되었습니다."),
     INVALID_VERIFICATION_TOKEN(HttpStatus.BAD_REQUEST, "휴대폰 인증 정보가 유효하지 않습니다."),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 올바르지 않습니다."),
     TERMS_NOT_AGREED(HttpStatus.BAD_REQUEST, "필수 약관에 동의해야 가입할 수 있습니다."),
 
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -29,6 +30,8 @@ public enum ErrorCode {
 
     COUPON_NOT_USABLE(HttpStatus.CONFLICT, "이 쿠폰을 현재 사용할 수 없습니다."),
     SURVEY_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 참여한 설문입니다."),
+    WASTE_SUBMISSION_ALREADY_APPROVED(
+            HttpStatus.CONFLICT, "이미 승인된 잔반 인증은 반려할 수 없습니다."),
     MENU_IN_USE(HttpStatus.CONFLICT, "이 메뉴를 사용한 기록이 있어 삭제할 수 없습니다."),
     DEMAND_PREDICTION_REQUIRED(
             HttpStatus.CONFLICT, "먼저 해당 끼니의 예상 식수 인원을 예측해 주세요."),

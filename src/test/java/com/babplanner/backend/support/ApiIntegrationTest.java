@@ -26,6 +26,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -65,8 +66,44 @@ public abstract class ApiIntegrationTest {
     @Autowired protected WasteSubmissionRepository wasteSubmissionRepository;
     @Autowired protected PasswordEncoder passwordEncoder;
 
+    @Autowired private JdbcTemplate sampleDataJdbc;
+
+    /**
+     * V13/V15가 넣었다가 V29가 운영에서 지우는 샘플 공지/혼잡도를 테스트용으로 되살린다.
+     *
+     * <p>기존 테스트가 "시드된 공지/혼잡도가 있다"는 가정 위에 쓰여 있어서다. 운영 동작이
+     * 아니라 테스트 고정값이며, V29 자체는 SampleDataCleanupMigrationTest가 검증한다.
+     */
+    private void restoreSampleData() {
+        sampleDataJdbc.update("delete from notices where title like '[개발 샘플]%'");
+        String[][] notices = {
+            {"[개발 샘플] 시스템 점검 안내", "TRUE", "2026-08-20 01:00:00"},
+            {"[개발 샘플] 중요 공지 두 번째", "TRUE", "2026-08-24 01:00:00"},
+            {"[개발 샘플] 일반 공지 최신", "FALSE", "2026-08-25 01:00:00"},
+            {"[개발 샘플] 일반 공지 이전", "FALSE", "2026-08-18 01:00:00"},
+        };
+        for (String[] n : notices) {
+            sampleDataJdbc.update("insert into notices (title, content, important, published_at,"
+                    + " created_at, updated_at) values (?, CONCAT('샘플 공지입니다.', CHAR(10), CHAR(10),"
+                    + " '두 번째 문단입니다.'), " + n[1] + ", TIMESTAMP '" + n[2] + "',"
+                    + " TIMESTAMP '" + n[2] + "', TIMESTAMP '" + n[2] + "')", n[0]);
+        }
+        String ts = "TIMESTAMP '2026-08-26 02:30:00'";
+        sampleDataJdbc.update("insert into congestion_status (site_id, level, people_count,"
+                + " display_message, source, observed_at, updated_at) select s.id, 'NORMAL', 42,"
+                + " '5분 이내', 'DEV_SEED', " + ts + ", " + ts + " from dining_sites s"
+                + " where s.code = 'STUDENT' and not exists (select 1 from congestion_status c"
+                + " where c.site_id = s.id)");
+        sampleDataJdbc.update("insert into congestion_status (site_id, level, people_count,"
+                + " display_message, source, observed_at, updated_at) select s.id, 'COMFORTABLE', 8,"
+                + " NULL, 'DEV_SEED', " + ts + ", " + ts + " from dining_sites s"
+                + " where s.code = 'STAFF' and not exists (select 1 from congestion_status c"
+                + " where c.site_id = s.id)");
+    }
+
     @BeforeEach
     void resetState() {
+        restoreSampleData();
         // users를 참조하는 자식 테이블을 먼저 비운다. FK 때문에 순서가 중요하다.
         wasteSubmissionRepository.deleteAll();
         inquiryRepository.deleteAll();

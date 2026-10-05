@@ -12,12 +12,11 @@ import com.babplanner.backend.waste.storage.WasteImageStorage;
 import com.babplanner.backend.waste.storage.WasteImageUpload;
 import java.time.Clock;
 import java.time.Instant;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-/** 잔반 사진 제출 접수와 조회. 실제 분석은 커밋 이후 비동기로 진행한다. */
+/** 잔반 사진 제출 접수와 조회. 접수된 제출은 PENDING으로 관리자 검토를 기다린다. */
 @Service
 public class WasteSubmissionService {
 
@@ -25,7 +24,6 @@ public class WasteSubmissionService {
     private final MenuRepository menuRepository;
     private final WasteImageStorage imageStorage;
     private final WasteProperties properties;
-    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     public WasteSubmissionService(
@@ -33,13 +31,11 @@ public class WasteSubmissionService {
             MenuRepository menuRepository,
             WasteImageStorage imageStorage,
             WasteProperties properties,
-            ApplicationEventPublisher eventPublisher,
             Clock clock) {
         this.submissionRepository = submissionRepository;
         this.menuRepository = menuRepository;
         this.imageStorage = imageStorage;
         this.properties = properties;
-        this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
 
@@ -71,9 +67,6 @@ public class WasteSubmissionService {
             throw exception;
         }
 
-        // 커밋된 뒤에만 분석이 시작되도록 이벤트로 넘긴다. 여기서 직접
-        // 스레드를 만들지 않는다.
-        eventPublisher.publishEvent(new WasteSubmissionCreatedEvent(submission.getId()));
         return WasteSubmissionResponse.from(submission);
     }
 

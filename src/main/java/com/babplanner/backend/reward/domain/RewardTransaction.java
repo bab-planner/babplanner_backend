@@ -37,6 +37,13 @@ public class RewardTransaction {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    /** 지급 출처 종류. 출처가 없는 거래는 null. (reference_type, reference_id)는 unique다. */
+    @Column(name = "reference_type", length = 30)
+    private String referenceType;
+
+    @Column(name = "reference_id")
+    private Long referenceId;
+
     protected RewardTransaction() {
         // JPA 전용
     }
@@ -48,6 +55,27 @@ public class RewardTransaction {
         this.type = type;
         this.description = description;
         this.createdAt = now;
+    }
+
+    public RewardTransaction(
+            Long userId,
+            int amount,
+            String type,
+            String description,
+            String referenceType,
+            Long referenceId,
+            Instant now) {
+        this(userId, amount, type, description, now);
+        this.referenceType = referenceType;
+        this.referenceId = referenceId;
+    }
+
+    public String getReferenceType() {
+        return referenceType;
+    }
+
+    public Long getReferenceId() {
+        return referenceId;
     }
 
     public Long getId() {

@@ -17,14 +17,19 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>기간은 메뉴의 제공일로 센다. 제출 시각으로 세면 늦게 올린 사진이 다음
  * 날짜 급식의 잔반으로 잡힌다.
  *
- * <p>표본은 APPROVED이면서 잔반률이 나온 건뿐이다. 분석에 실패했거나 거절된
- * 건은 잔반률을 잰 적이 없으므로 평균에 넣을 값이 없다.
+ * <p>건수는 검토가 끝난(APPROVED, REJECTED) 제출이고, 평균은 그중 APPROVED이면서
+ * 잔반률이 기록된 건뿐이다. 수동 검토에서는 잔반률이 기록되지 않으므로 평균은
+ * null, 메뉴별 집계는 빈 배열일 수 있다.
  */
 @Service
 public class AdminWasteService {
 
-    /** 분석이 끝나 잔반률이 확정된 상태. */
-    private static final WasteSubmissionStatus ANALYZED = WasteSubmissionStatus.APPROVED;
+    /** 잔반률 평균을 낼 때 보는 상태. */
+    private static final WasteSubmissionStatus MEASURED = WasteSubmissionStatus.APPROVED;
+
+    /** 검토가 끝난 제출. 건수는 이 둘을 센다. */
+    private static final List<WasteSubmissionStatus> REVIEWED =
+            List.of(WasteSubmissionStatus.APPROVED, WasteSubmissionStatus.REJECTED);
 
     private final WasteSubmissionRepository wasteSubmissionRepository;
 
@@ -36,13 +41,13 @@ public class AdminWasteService {
     public WasteSummaryResponse getSummary(LocalDate from, LocalDate to) {
         validateRange(from, to);
         return WasteSummaryResponse.from(
-                wasteSubmissionRepository.aggregateWasteRate(ANALYZED, from, to));
+                wasteSubmissionRepository.aggregateWasteRate(MEASURED, REVIEWED, from, to));
     }
 
     @Transactional(readOnly = true)
     public List<MenuWasteResponse> getByMenu(LocalDate from, LocalDate to) {
         validateRange(from, to);
-        return wasteSubmissionRepository.aggregateWasteRateByMenu(ANALYZED, from, to).stream()
+        return wasteSubmissionRepository.aggregateWasteRateByMenu(MEASURED, from, to).stream()
                 .map(MenuWasteResponse::from)
                 .toList();
     }

@@ -19,10 +19,6 @@ import java.time.LocalDate;
  * 백엔드가 스스로 채운다. 그 전까지의 임시 입력이다.
  *
  * <ul>
- *   <li>TODO(demand-forecast): {@code menuPopularity}는 지금 클라이언트가 보내는
- *       <b>PoC 시뮬레이션 값</b>이다. 향후 과거 실제 메뉴별 식수 기록으로 Spring 또는
- *       AI feature pipeline이 자동 계산한다. 일반 관리자에게 0.9 같은 ML feature 값을
- *       직접 입력받지 않을 계획이다.
  *   <li>TODO(demand-forecast): {@code temperature}/{@code rainfall}/{@code humidity}는
  *       지금 입력값이다. 향후 Spring이 기상예보 API로 D-1 예보를 받아 자동 구성한다.
  *   <li>TODO(demand-forecast): {@code semester}/{@code semesterWeek}/{@code examPeriod}/
@@ -51,7 +47,6 @@ public record DemandForecastRequest(
         @NotNull @DecimalMin("0.0") @DecimalMax("100.0") Double humidity,
         @NotNull MenuCategory menuCategory,
         @NotBlank @Size(max = 50) String mainMenu,
-        @NotNull @DecimalMin("0.0") @DecimalMax("1.0") Double menuPopularity,
         @NotNull Boolean specialMenu) {
 
     /** 모델은 학기 중 평일만 보고 학습했다. 주말에 숫자를 내면 근거 없는 값이다. */

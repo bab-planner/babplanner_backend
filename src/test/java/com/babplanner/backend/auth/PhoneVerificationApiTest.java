@@ -34,12 +34,13 @@ class PhoneVerificationApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("send-code 응답에 인증번호 자체는 들어가지 않는다")
-    void sendCodeDoesNotLeakCode() throws Exception {
+    @DisplayName("noop 모드에서는 developmentCode로 인증번호를 돌려준다")
+    void sendCodeReturnsDevelopmentCodeInNoopMode() throws Exception {
         MvcResult result = postJson("/api/v1/auth/phone/send-code", Map.of("phone", PHONE));
 
         String code = smsSender.lastCodeFor(PHONE);
-        assertThat(result.getResponse().getContentAsString()).doesNotContain(code);
+        assertThat(body(result).path("data").path("developmentCode").asText()).isEqualTo(code);
+        assertThat(code).matches("[0-9]{6}");
     }
 
     @Test

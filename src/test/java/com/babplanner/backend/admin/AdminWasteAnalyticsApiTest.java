@@ -65,10 +65,8 @@ class AdminWasteAnalyticsApiTest extends ApiIntegrationTest {
     private void analyzed(Menu menu, long userId, double wasteRate) {
         WasteSubmission submission = new WasteSubmission(
                 userId, menu.getId(), "key-" + wasteRate, clock.instant(), clock.instant());
-        submission.transitionTo(WasteSubmissionStatus.VERIFYING, clock.instant());
-        submission.transitionTo(WasteSubmissionStatus.ANALYZING, clock.instant());
-        submission.applyAnalysis(wasteRate, 0.9, "test-model", clock.instant());
-        submission.transitionTo(WasteSubmissionStatus.APPROVED, clock.instant());
+        submission.applyMeasurement(wasteRate, 0.9, clock.instant());
+        submission.markReviewed(WasteSubmissionStatus.APPROVED, 100, null, clock.instant());
         wasteSubmissionRepository.save(submission);
     }
 
@@ -76,12 +74,8 @@ class AdminWasteAnalyticsApiTest extends ApiIntegrationTest {
     private void unanalyzed(Menu menu, long userId, WasteSubmissionStatus status) {
         WasteSubmission submission = new WasteSubmission(
                 userId, menu.getId(), "key-" + status, clock.instant(), clock.instant());
-        submission.transitionTo(WasteSubmissionStatus.VERIFYING, clock.instant());
-        if (status != WasteSubmissionStatus.VERIFYING) {
-            submission.transitionTo(WasteSubmissionStatus.ANALYZING, clock.instant());
-        }
-        if (status == WasteSubmissionStatus.REJECTED || status == WasteSubmissionStatus.FAILED) {
-            submission.transitionTo(status, clock.instant());
+        if (status != WasteSubmissionStatus.PENDING) {
+            submission.markReviewed(status, null, null, clock.instant());
         }
         wasteSubmissionRepository.save(submission);
     }
@@ -148,19 +142,21 @@ class AdminWasteAnalyticsApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("분석되지 않은 제출은 표본에서 뺀다")
+    @DisplayName("검토되지 않은 제출은 건수에서 빼고 반려는 건수에 센다")
     void unanalyzedSubmissionsAreExcluded() throws Exception {
         signup();
         Menu menu = menu("김치찌개", DAY);
         analyzed(menu, userId(), 0.5);
+        unanalyzed(menu, userId(), WasteSubmissionStatus.PENDING);
         unanalyzed(menu, userId(), WasteSubmissionStatus.VERIFYING);
         unanalyzed(menu, userId(), WasteSubmissionStatus.ANALYZING);
-        unanalyzed(menu, userId(), WasteSubmissionStatus.REJECTED);
         unanalyzed(menu, userId(), WasteSubmissionStatus.FAILED);
+        unanalyzed(menu, userId(), WasteSubmissionStatus.REJECTED);
 
         JsonNode data = summary(DAY, DAY, adminToken());
 
-        assertThat(data.path("totalSubmissions").asLong()).isEqualTo(1);
+        // 승인 1건 + 반려 1건. 평균은 잔반률이 기록된 승인 건만으로 낸다.
+        assertThat(data.path("totalSubmissions").asLong()).isEqualTo(2);
         assertAverage(data, 0.5);
     }
 

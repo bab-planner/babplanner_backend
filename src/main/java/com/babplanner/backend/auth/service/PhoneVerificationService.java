@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,13 +32,16 @@ public class PhoneVerificationService {
     private final VerificationCodeHasher codeHasher;
     private final AuthProperties properties;
     private final Clock clock;
+    private final String smsMode;
 
     public PhoneVerificationService(
             PhoneVerificationRepository repository,
             SmsSender smsSender,
             VerificationCodeHasher codeHasher,
             AuthProperties properties,
-            Clock clock) {
+            Clock clock,
+            @Value("${bapplanner.sms.mode:}") String smsMode) {
+        this.smsMode = smsMode;
         this.repository = repository;
         this.smsSender = smsSender;
         this.codeHasher = codeHasher;
@@ -68,10 +72,18 @@ public class PhoneVerificationService {
 
         return new PhoneSendCodeResponse(
                 (int) properties.getVerificationCodeTtl().toSeconds(),
-                (int) properties.getVerificationResendCooldown().toSeconds());
+                (int) properties.getVerificationResendCooldown().toSeconds(),
+                // noop(개발 전용)일 때만 코드를 돌려준다. 로그에는 남기지 않는다.
+                "noop".equalsIgnoreCase(smsMode) ? code : null);
     }
 
-    @Transactional
+    /**
+     * 인증번호 확인.
+     *
+     * <p>오입력 횟수를 올린 결과가 롤백되면 무차별 대입을 막을 수 없으므로 ApiException에는
+     * 롤백하지 않는다. 시도 슬롯은 조건부 UPDATE로 원자적으로 확보한다.
+     */
+    @Transactional(noRollbackFor = ApiException.class)
     public PhoneVerifyResponse verify(String phone, String code) {
         Instant now = clock.instant();
         PhoneVerification verification = repository
@@ -81,10 +93,17 @@ public class PhoneVerificationService {
         if (verification.isCodeExpired(now)) {
             throw new ApiException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
+        // 시도 슬롯 확보. 한도에 이르면 코드가 맞아도 실패한다.
+        if (repository.reserveAttempt(verification.getId(), properties.getVerificationMaxAttempts())
+                != 1) {
+            throw new ApiException(ErrorCode.INVALID_VERIFICATION_CODE);
+        }
         if (!codeHasher.matches(phone, code, verification.getCodeHash())) {
             // 만료와 불일치를 같은 오류로 응답해 어떤 쪽인지 추측하기 어렵게 한다.
             throw new ApiException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
+        // 성공한 시도는 실패 횟수에 세지 않는다.
+        repository.releaseAttempt(verification.getId());
 
         String verificationToken = Hashes.randomToken();
         Duration tokenTtl = properties.getVerificationTokenTtl();

@@ -16,9 +16,11 @@ import java.time.Instant;
  * <p>이미지는 저장소 키만 갖는다. 서버 파일 경로는 저장하지도, 내보내지도
  * 않는다.
  *
- * <p>리워드 필드({@code earnedPoints}, {@code couponIssued})는 OpenAPI 계약이
- * 정의하므로 컬럼을 두지만, 이번 단계에서 지급 규칙이 없으므로 항상 null로
- * 남는다. 임의의 값을 채워 정책처럼 보이게 하지 않는다.
+ * <p>제출은 PENDING으로 생성되고 관리자가 검토해 APPROVED 또는 REJECTED로
+ * 바꾼다. 상태 전이는 동시성 때문에 조건부 UPDATE(repository)로만 일어난다.
+ * {@code earnedPoints}는 APPROVED에서 실제 지급된 포인트, REJECTED에서 0이며
+ * PENDING에서는 null이다. 쿠폰 발급 규칙은 미정이라 {@code couponIssued}는
+ * 종료 상태에서 항상 false다.
  */
 @Entity
 @Table(name = "waste_submissions")
@@ -44,6 +46,7 @@ public class WasteSubmission {
     @Column(name = "captured_at", nullable = false)
     private Instant capturedAt;
 
+    /** 측정된 잔반률(0~1). 수동 검토에서는 채워지지 않으며 null일 수 있다. */
     @Column(name = "waste_rate")
     private Double wasteRate;
 
@@ -56,12 +59,11 @@ public class WasteSubmission {
     @Column(name = "coupon_issued")
     private Boolean couponIssued;
 
-    /** 이 판정을 낸 분석 구현. 내부 추적용이며 API 응답에 넣지 않는다. */
-    @Column(name = "analysis_model_version", length = 100)
-    private String analysisModelVersion;
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
 
-    @Column(name = "processing_started_at")
-    private Instant processingStartedAt;
+    @Column(name = "reviewed_by_user_id")
+    private Long reviewedByUserId;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -79,37 +81,31 @@ public class WasteSubmission {
         this.menuId = menuId;
         this.imageStorageKey = imageStorageKey;
         this.capturedAt = capturedAt;
-        this.status = WasteSubmissionStatus.RECEIVED;
+        this.status = WasteSubmissionStatus.PENDING;
         this.createdAt = now;
         this.updatedAt = now;
     }
 
-    /**
-     * 상태를 옮긴다.
-     *
-     * <p>허용되지 않는 전이는 조용히 무시하지 않고 거부한다. 종료 상태는 다시
-     * 바뀌지 않는다.
-     */
-    public void transitionTo(WasteSubmissionStatus next, Instant now) {
-        if (!status.canTransitionTo(next)) {
-            throw new IllegalStateException(
-                    "허용되지 않는 상태 전이입니다: " + status + " -> " + next);
-        }
-        this.status = next;
-        this.updatedAt = now;
-    }
-
-    public void markProcessingStarted(Instant now) {
-        this.processingStartedAt = now;
-        this.updatedAt = now;
-    }
-
-    /** 분석 결과를 기록한다. 리워드 필드는 건드리지 않는다. */
-    public void applyAnalysis(
-            Double wasteRate, Double confidence, String modelVersion, Instant now) {
+    /** 측정된 잔반률을 기록한다. 집계가 읽는 값이다. */
+    public void applyMeasurement(Double wasteRate, Double confidence, Instant now) {
         this.wasteRate = wasteRate;
         this.confidence = confidence;
-        this.analysisModelVersion = modelVersion;
+        this.updatedAt = now;
+    }
+
+    /**
+     * 검토 결과를 엔티티에 직접 기록한다.
+     *
+     * <p>운영 경로는 동시성 때문에 조건부 UPDATE를 쓴다. 이 메서드는 이미 검토된
+     * 상태의 행을 만들어야 하는 곳(데이터 이관, 테스트 fixture)을 위한 것이다.
+     */
+    public void markReviewed(
+            WasteSubmissionStatus status, Integer earnedPoints, Long reviewerId, Instant now) {
+        this.status = status;
+        this.earnedPoints = earnedPoints;
+        this.couponIssued = earnedPoints == null ? null : Boolean.FALSE;
+        this.reviewedByUserId = reviewerId;
+        this.reviewedAt = now;
         this.updatedAt = now;
     }
 
@@ -153,12 +149,12 @@ public class WasteSubmission {
         return couponIssued;
     }
 
-    public String getAnalysisModelVersion() {
-        return analysisModelVersion;
+    public Instant getReviewedAt() {
+        return reviewedAt;
     }
 
-    public Instant getProcessingStartedAt() {
-        return processingStartedAt;
+    public Long getReviewedByUserId() {
+        return reviewedByUserId;
     }
 
     public Instant getCreatedAt() {

@@ -5,11 +5,15 @@ import com.babplanner.backend.allergy.dto.AllergyUpdateRequest;
 import com.babplanner.backend.allergy.service.AllergyService;
 import com.babplanner.backend.common.api.ApiResponse;
 import com.babplanner.backend.common.security.AuthenticatedUser;
+import com.babplanner.backend.user.dto.AccountDeletionRequest;
 import com.babplanner.backend.user.dto.UserResponse;
+import com.babplanner.backend.user.service.AccountDeletionService;
 import com.babplanner.backend.user.dto.UserUpdateRequest;
 import com.babplanner.backend.user.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,8 +34,13 @@ public class UserController {
 
     private final UserService userService;
     private final AllergyService allergyService;
+    private final AccountDeletionService accountDeletionService;
 
-    public UserController(UserService userService, AllergyService allergyService) {
+    public UserController(
+            UserService userService,
+            AllergyService allergyService,
+            AccountDeletionService accountDeletionService) {
+        this.accountDeletionService = accountDeletionService;
         this.userService = userService;
         this.allergyService = allergyService;
     }
@@ -46,6 +55,15 @@ public class UserController {
             @AuthenticationPrincipal AuthenticatedUser principal,
             @Valid @RequestBody UserUpdateRequest request) {
         return ApiResponse.success(userService.updateMe(principal.id(), request));
+    }
+
+    /** 회원 탈퇴. 성공하면 본문 없이 204다. 비밀번호 불일치는 400이다(401 아님). */
+    @PostMapping("/deletion")
+    public ResponseEntity<Void> deleteMe(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @Valid @RequestBody AccountDeletionRequest request) {
+        accountDeletionService.delete(principal.id(), request.password());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/allergies")

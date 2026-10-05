@@ -71,7 +71,6 @@ public class AdminDemandForecastService {
                 request.humidity(),
                 DemandForecastAiRequest.menuCategoryLabel(request.menuCategory()),
                 request.mainMenu().strip(),
-                request.menuPopularity(),
                 request.specialMenu());
     }
 }

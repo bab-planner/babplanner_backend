@@ -23,7 +23,7 @@ public final class DemandForecastFixtures {
               "conditions": {
                 "weekday": "화요일", "semester": 2, "semesterWeek": 3,
                 "examPeriod": false, "holiday": false, "campusEvent": false,
-                "menuCategory": "양식", "mainMenu": "돈까스", "menuPopularity": 0.9,
+                "menuCategory": "양식", "mainMenu": "돈까스",
                 "specialMenu": false, "temperature": 24.0, "rainfall": 0.0, "humidity": 60.0
               },
               "model": {

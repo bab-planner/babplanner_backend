@@ -48,7 +48,7 @@ class DemandForecastAiClientTest {
 
     static DemandForecastAiRequest request() {
         return new DemandForecastAiRequest(
-                "2026-09-15", 2, 3, false, false, false, 24.0, 0.0, 60.0, "양식", "돈까스", 0.9,
+                "2026-09-15", 2, 3, false, false, false, 24.0, 0.0, 60.0, "양식", "돈까스",
                 false);
     }
 
@@ -124,8 +124,8 @@ class DemandForecastAiClientTest {
                 // FastAPI는 한글 라벨을 받는다.
                 .andExpect(jsonPath("$.menuCategory").value("양식"))
                 .andExpect(jsonPath("$.mainMenu").value("돈까스"))
-                .andExpect(jsonPath("$.menuPopularity").value(0.9))
                 .andExpect(jsonPath("$.specialMenu").value(false))
+                .andExpect(jsonPath("$.menuPopularity").doesNotExist())
                 // 과거 feature와 사용자 정보는 보내지 않는다.
                 .andExpect(jsonPath("$.lag_1").doesNotExist())
                 .andExpect(jsonPath("$.weekday").doesNotExist())

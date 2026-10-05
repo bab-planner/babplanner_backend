@@ -39,7 +39,6 @@ public record DemandForecastAiResponse(
             Boolean campusEvent,
             String menuCategory,
             String mainMenu,
-            Double menuPopularity,
             Boolean specialMenu,
             Double temperature,
             Double rainfall,

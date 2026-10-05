@@ -92,7 +92,6 @@ class AdminDemandForecastApiTest extends ApiIntegrationTest {
         body.put("humidity", 60.0);
         body.put("menuCategory", "WESTERN");
         body.put("mainMenu", "돈까스");
-        body.put("menuPopularity", 0.9);
         body.put("specialMenu", false);
         return body;
     }
@@ -178,7 +177,6 @@ class AdminDemandForecastApiTest extends ApiIntegrationTest {
         assertRejected(token, payload("humidity", -1));
         assertRejected(token, payload("rainfall", -0.5));
         assertRejected(token, payload("temperature", 60));
-        assertRejected(token, payload("menuPopularity", 1.5));
         assertRejected(token, payload("mainMenu", "  "));
     }
 

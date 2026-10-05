@@ -98,13 +98,15 @@ class WasteSubmissionApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("접수 직후 상태는 RECEIVED다")
-    void initialStatusIsReceived() throws Exception {
+    @DisplayName("접수 직후 상태는 PENDING이고 리워드 필드는 null이다")
+    void initialStatusIsPending() throws Exception {
         JsonNode auth = signup();
 
         JsonNode data = body(post(accessTokenOf(auth), anyMenuId())).path("data");
 
-        assertThat(data.path("status").asText()).isEqualTo("RECEIVED");
+        assertThat(data.path("status").asText()).isEqualTo("PENDING");
+        assertThat(data.path("earnedPoints").isNull()).isTrue();
+        assertThat(data.path("couponIssued").isNull()).isTrue();
         assertThat(data.path("wasteRate").isNull()).isTrue();
         assertThat(data.path("confidence").isNull()).isTrue();
         assertThat(data.path("createdAt").asText()).endsWith("Z");
@@ -325,30 +327,17 @@ class WasteSubmissionApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("처리가 끝나면 종료 상태가 된다")
-    void processingReachesTerminalStatus() throws Exception {
+    @DisplayName("제출 후에는 관리자 검토 전까지 PENDING으로 남는다")
+    void staysPendingUntilReviewed() throws Exception {
         JsonNode auth = signup();
         long id = createSubmission(auth);
 
         JsonNode data = body(getJson(PATH + "/" + id, accessTokenOf(auth))).path("data");
 
-        assertThat(data.path("status").asText()).isEqualTo("APPROVED");
-        assertThat(data.path("wasteRate").asDouble()).isBetween(0.0, 1.0);
-        assertThat(data.path("confidence").asDouble()).isBetween(0.0, 1.0);
-    }
-
-    @Test
-    @DisplayName("승인되어도 리워드 필드는 비어 있다")
-    void approvedDoesNotGrantReward() throws Exception {
-        JsonNode auth = signup();
-        long id = createSubmission(auth);
-
-        JsonNode data = body(getJson(PATH + "/" + id, accessTokenOf(auth))).path("data");
-
-        assertThat(data.path("status").asText()).isEqualTo("APPROVED");
-        // 지급 규칙이 없으므로 0이나 false로 채우지도 않는다.
+        assertThat(data.path("status").asText()).isEqualTo("PENDING");
         assertThat(data.path("earnedPoints").isNull()).isTrue();
         assertThat(data.path("couponIssued").isNull()).isTrue();
+        assertThat(rewardTransactionRepository.findAll()).isEmpty();
     }
 
     @Test
@@ -360,7 +349,7 @@ class WasteSubmissionApiTest extends ApiIntegrationTest {
 
         WasteSubmission stored = wasteSubmissionRepository.findById(id).orElseThrow();
         assertThat(stored.getMenuId()).isEqualTo(menuId);
-        assertThat(stored.getStatus()).isEqualTo(WasteSubmissionStatus.APPROVED);
+        assertThat(stored.getStatus()).isEqualTo(WasteSubmissionStatus.PENDING);
         assertThat(stored.getImageStorageKey()).isNotBlank();
         assertThat(stored.getEarnedPoints()).isNull();
         assertThat(stored.getCouponIssued()).isNull();
@@ -379,7 +368,7 @@ class WasteSubmissionApiTest extends ApiIntegrationTest {
 
         assertThat(patched.getResponse().getStatus()).isNotEqualTo(200);
         WasteSubmission stored = wasteSubmissionRepository.findById(id).orElseThrow();
-        assertThat(stored.getStatus()).isEqualTo(WasteSubmissionStatus.APPROVED);
+        assertThat(stored.getStatus()).isEqualTo(WasteSubmissionStatus.PENDING);
         assertThat(stored.getEarnedPoints()).isNull();
     }
 }

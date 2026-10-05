@@ -75,7 +75,7 @@ class AdminDemandForecastServiceTest {
     static DemandForecastRequest request() {
         return new DemandForecastRequest(
                 LocalDate.parse("2026-09-15"), 2, 3, false, false, false, 24.0, 0.0, 60.0,
-                MenuCategory.WESTERN, "돈까스", 0.9, false);
+                MenuCategory.WESTERN, "돈까스", false);
     }
 
     static DemandForecastAiResponse aiResponse(boolean synthetic, List<String> warnings) {
@@ -85,7 +85,7 @@ class AdminDemandForecastServiceTest {
                 431,
                 new DemandForecastAiResponse.Reference(350, 375, 367, "2026-09-11"),
                 new DemandForecastAiResponse.Conditions(
-                        "화요일", 2, 3, false, false, false, "양식", "돈까스", 0.9, false, 24.0, 0.0,
+                        "화요일", 2, 3, false, false, false, "양식", "돈까스", false, 24.0, 0.0,
                         60.0),
                 new DemandForecastAiResponse.Model(
                         "lightgbm", "54453980807e", synthetic, "2026-09-12T23:43:37"),
@@ -100,7 +100,7 @@ class AdminDemandForecastServiceTest {
 
         service.predict(new DemandForecastRequest(
                 LocalDate.parse("2026-09-16"), 1, 15, true, true, true, -3.5, 12.5, 88.0,
-                MenuCategory.SNACK, "  떡볶이  ", 0.35, true));
+                MenuCategory.SNACK, "  떡볶이  ", true));
 
         DemandForecastAiRequest sent = client.received;
         assertThat(sent.date()).isEqualTo("2026-09-16");
@@ -114,7 +114,6 @@ class AdminDemandForecastServiceTest {
         assertThat(sent.humidity()).isEqualTo(88.0);
         assertThat(sent.menuCategory()).isEqualTo("분식");
         assertThat(sent.mainMenu()).isEqualTo("떡볶이");
-        assertThat(sent.menuPopularity()).isEqualTo(0.35);
         assertThat(sent.specialMenu()).isTrue();
     }
 
@@ -166,7 +165,6 @@ class AdminDemandForecastServiceTest {
         assertThat(conditions.mainMenu()).isEqualTo("돈까스");
         assertThat(conditions.semester()).isEqualTo(2);
         assertThat(conditions.semesterWeek()).isEqualTo(3);
-        assertThat(conditions.menuPopularity()).isEqualTo(0.9);
     }
 
     @Test

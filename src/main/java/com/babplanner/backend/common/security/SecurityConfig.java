@@ -70,6 +70,9 @@ public class SecurityConfig {
                         // 없는지가 아니라 권한이 없다는 뜻이라야 한다.
                         .requestMatchers("/api/v1/admin/**")
                         .hasRole("ADMIN")
+                        // 회원 탈퇴는 일반 사용자 본인만. 관리자 계정은 이 경로로 지울 수 없다.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/me/deletion")
+                        .hasRole("USER")
                         // OpenAPI에 security가 없는 공개 endpoint
                         .requestMatchers(
                                 HttpMethod.POST,

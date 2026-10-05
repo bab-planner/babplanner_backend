@@ -19,6 +19,9 @@ public class AuthProperties {
     private Duration verificationTokenTtl = Duration.ofMinutes(10);
     private String issuer = "babplanner";
 
+    /** 한 인증 요청에서 허용하는 인증번호 입력 시도 횟수. 넘기면 요청이 무효가 된다. */
+    private int verificationMaxAttempts = 5;
+
     /**
      * JWT HMAC 서명 키. 최소 32바이트.
      *
@@ -73,6 +76,18 @@ public class AuthProperties {
 
     public void setVerificationTokenTtl(Duration verificationTokenTtl) {
         this.verificationTokenTtl = verificationTokenTtl;
+    }
+
+    public int getVerificationMaxAttempts() {
+        return verificationMaxAttempts;
+    }
+
+    public void setVerificationMaxAttempts(int verificationMaxAttempts) {
+        if (verificationMaxAttempts < 1) {
+            throw new IllegalArgumentException(
+                    "bapplanner.auth.verification-max-attempts는 1 이상이어야 합니다.");
+        }
+        this.verificationMaxAttempts = verificationMaxAttempts;
     }
 
     public String getIssuer() {

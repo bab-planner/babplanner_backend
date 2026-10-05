@@ -49,6 +49,10 @@ public class PhoneVerification {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    /** 오입력 횟수. 조건부 UPDATE로만 바꾸므로 엔티티 저장 시 덮어쓰지 않는다. */
+    @Column(name = "failed_attempts", insertable = false, updatable = false)
+    private int failedAttempts;
+
     protected PhoneVerification() {
         // JPA 전용
     }
@@ -89,6 +93,10 @@ public class PhoneVerification {
 
     public boolean isTokenUsed() {
         return tokenUsedAt != null;
+    }
+
+    public int getFailedAttempts() {
+        return failedAttempts;
     }
 
     public Long getId() {
