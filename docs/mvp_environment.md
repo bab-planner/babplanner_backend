@@ -35,6 +35,7 @@ FastAPI와 MySQL은 브라우저나 앱이 직접 부르지 않는다. 백엔드
 | `WASTE_STORAGE_MODE` | 예 | `local` | (아래 참고) | 아니오 | 기본값 없음 |
 | `WASTE_LOCAL_ROOT` | 조건부 | 로컬 디렉터리 | — | 아니오 | `storage-mode=local` 일 때만 |
 | `REWARD_WASTE_APPROVAL_POINTS` | 아니오 | `100` | `100` | 아니오 | 관리자가 잔반 인증을 APPROVED로 바꿀 때 지급 포인트(`bapplanner.reward.waste-approval-points`). 0 이상 정수, 음수면 기동 실패. 제출 한 건당 한 번만 지급(DB unique). 쿠폰 발급 규칙은 미정이라 `couponIssued`는 항상 false |
+| `BAPPLANNER_DEMO_DATA_ENABLED` / `_ACTION` / `_DRY_RUN` | 아니오 | — | 시연 서버에서만 | 아니오 | 관리자 웹 시연 데이터 생성(`seed`)·선별 정리(`cleanup`). 기본 꺼짐, `local`/`dev` 프로필 전용(다른 프로필에서 켜면 기동 실패). [demo_data.md](demo_data.md) |
 | `DEV_ADMIN_ENABLED` | 아니오 | `true` | **false** | 아니오 | 기본 `false` |
 | `DEV_ADMIN_PHONE` / `DEV_ADMIN_PASSWORD` / `DEV_ADMIN_STUDENT_ID` / `DEV_ADMIN_NAME` | 조건부 | — | 사용 안 함 | **예**(비밀번호) | `DEV_ADMIN_ENABLED=true` 일 때만. `local`/`dev` 프로필 전용 |
 | `DEV_USER_ENABLED` | 아니오 | `true` | **false** | 아니오 | 기본 `false` |

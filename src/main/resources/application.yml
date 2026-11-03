@@ -42,6 +42,12 @@ bapplanner:
   # 기본 false(기존 동작). SMS_MODE=noop 으로 공개 배포할 때는 반드시 true.
   demo:
     disable-signup: ${BAPPLANNER_DEMO_DISABLE_SIGNUP:false}
+  # 관리자 웹 시연용 샘플 데이터. 기본 꺼짐. local/dev 프로필에서만 동작하며 production에서는
+  # 켜면 기동에 실패한다. 생성(seed)과 정리(cleanup)는 action으로 각각 명시한다.
+  demo-data:
+    enabled: ${BAPPLANNER_DEMO_DATA_ENABLED:false}
+    action: ${BAPPLANNER_DEMO_DATA_ACTION:}
+    dry-run: ${BAPPLANNER_DEMO_DATA_DRY_RUN:false}
   # AI 서비스(FastAPI) 호출 설정. 잔반/수요/발주가 같은 프로세스이므로
   # 주소와 토큰도 하나만 둔다. 이 토큰은 위 internal 토큰과 다른 값이다.
   ai:
