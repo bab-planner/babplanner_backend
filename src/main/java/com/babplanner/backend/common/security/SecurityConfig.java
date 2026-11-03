@@ -2,6 +2,7 @@ package com.babplanner.backend.common.security;
 
 import com.babplanner.backend.common.api.ApiError;
 import com.babplanner.backend.common.api.ApiResponse;
+import com.babplanner.backend.common.config.DemoProperties;
 import com.babplanner.backend.common.error.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +16,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * 경로별 접근 정책.
@@ -35,20 +37,26 @@ public class SecurityConfig {
     private final AccessTokenAuthenticationFilter accessTokenAuthenticationFilter;
     private final ServiceTokenAuthenticationFilter serviceTokenAuthenticationFilter;
     private final ObjectMapper objectMapper;
+    private final CorsConfigurationSource corsConfigurationSource;
+    private final DemoProperties demoProperties;
 
     public SecurityConfig(
             AccessTokenAuthenticationFilter accessTokenAuthenticationFilter,
             ServiceTokenAuthenticationFilter serviceTokenAuthenticationFilter,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            CorsConfigurationSource corsConfigurationSource,
+            DemoProperties demoProperties) {
         this.accessTokenAuthenticationFilter = accessTokenAuthenticationFilter;
         this.serviceTokenAuthenticationFilter = serviceTokenAuthenticationFilter;
         this.objectMapper = objectMapper;
+        this.corsConfigurationSource = corsConfigurationSource;
+        this.demoProperties = demoProperties;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
                 .sessionManagement(session ->
@@ -106,6 +114,12 @@ public class SecurityConfig {
                 .addFilterBefore(
                         serviceTokenAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
+        if (demoProperties.isDisableSignup()) {
+            // 공개 시연: 가입/휴대폰 인증 경로 차단. CorsFilter 뒤, 인가 규칙 앞.
+            http.addFilterBefore(
+                    new DemoSignupBlockFilter(objectMapper),
+                    UsernamePasswordAuthenticationFilter.class);
+        }
         return http.build();
     }
 

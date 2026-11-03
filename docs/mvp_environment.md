@@ -30,6 +30,8 @@ FastAPI와 MySQL은 브라우저나 앱이 직접 부르지 않는다. 백엔드
 | `AI_SERVICE_BASE_URL` | 조건부 | `http://127.0.0.1:8001` | 내부 주소 | 아니오 | 다음 영업일 점심 식수 예측(`/admin/demand-forecasts/*`)에 필요 |
 | `AI_SERVICE_TOKEN` | 조건부 | 임의 32자 이상 | 별도 관리 | **예** | Spring이 FastAPI로 **보내는** 토큰 |
 | `SMS_MODE` | 예 | `noop` | 실제 어댑터 | 아니오 | 기본값 없음. 운영에서 `noop`이 조용히 선택되지 않게. **`noop`이면 send-code 응답에 `developmentCode`가 포함되므로 공개 환경에서 절대 쓰지 말 것** (docs/account_deletion.md) |
+| `BAPPLANNER_CORS_ALLOWED_ORIGINS` | 아니오 | 비움 | 관리자 웹 Origin | 아니오 | 쉼표 구분, 정확히 일치하는 `https://host[:port]` 만 허용. 와일드카드/http/경로/끝 슬래시는 **기동 실패**. 기본은 빈 목록(브라우저 cross-origin 전부 거절) |
+| `BAPPLANNER_DEMO_DISABLE_SIGNUP` | 아니오 | `false` | **`true`** (공개 시연) | 아니오 | `true`면 `POST /api/v1/auth/phone/send-code`, `/phone/verify`, `/signup` 이 403(`FORBIDDEN`). 기본 `false`(기존 동작). **`SMS_MODE=noop` 으로 공개 배포하면 반드시 `true`** |
 | `WASTE_STORAGE_MODE` | 예 | `local` | (아래 참고) | 아니오 | 기본값 없음 |
 | `WASTE_LOCAL_ROOT` | 조건부 | 로컬 디렉터리 | — | 아니오 | `storage-mode=local` 일 때만 |
 | `REWARD_WASTE_APPROVAL_POINTS` | 아니오 | `100` | `100` | 아니오 | 관리자가 잔반 인증을 APPROVED로 바꿀 때 지급 포인트(`bapplanner.reward.waste-approval-points`). 0 이상 정수, 음수면 기동 실패. 제출 한 건당 한 번만 지급(DB unique). 쿠폰 발급 규칙은 미정이라 `couponIssued`는 항상 false |
@@ -133,13 +135,82 @@ https://admin.example
   /api/    → Spring Backend
 ```
 
-같은 출처 리버스 프록시. 이러면 브라우저에 CORS 설정이 필요 없다.
-
-그래서 이번 단계에서 백엔드에 CORS를 열지 **않았다.** 특히
-`Access-Control-Allow-Origin: *` 와 bearer 인증을 함께 쓰는 설정은 만들지
-않는다. 별도 도메인 배포가 실제로 정해지면 그때 허용 출처를 명시한 CORS를
-추가한다.
+같은 출처 리버스 프록시도 가능하다. 하지만 현재 시연은 **Vercel(관리자 웹) +
+Naver Cloud(백엔드)** 별도 출처이므로 아래 6절의 CORS 설정이 필요하다.
 
 - FastAPI는 브라우저를 향한 서비스가 아니다. 공개 API로 노출하지 않는다.
 - MySQL은 백엔드만 접근한다. 앱·관리자 웹·AI 서비스는 DB에 직접 붙지 않는다.
 - AI 서비스는 상태를 갖지 않는다. 저장은 전부 백엔드가 한다.
+
+---
+
+## 6. Vercel 관리자 웹 ↔ Naver Cloud 백엔드 (CORS)
+
+```
+브라우저 ─ https://<admin>.vercel.app  (Vercel, 정적 관리자 웹)
+   │  fetch + Authorization: Bearer
+   ▼
+https://api.<도메인>  (Caddy: TLS 종료) ─→ spring:8080 (외부 비공개) ─→ MySQL
+```
+
+- HTTPS는 Caddy 같은 리버스 프록시가 처리한다. Spring은 8080을 외부에 열지 않고
+  프록시만 접근한다. 관리자 웹이 https이므로 API도 반드시 https여야 한다(mixed content).
+- 인증은 Bearer JWT다. 쿠키를 쓰지 않으므로 `Access-Control-Allow-Credentials` 는 보내지 않는다.
+
+### CORS 동작
+
+| 항목 | 값 |
+|---|---|
+| 적용 경로 | `/api/v1/**` 만. `/internal/v1/**` 는 브라우저 CORS 대상이 아니다 |
+| 허용 Origin | `BAPPLANNER_CORS_ALLOWED_ORIGINS` 와 **정확히** 일치하는 것만. 와일드카드·Origin 반사 없음 |
+| 메서드 | GET, POST, PUT, PATCH, DELETE, OPTIONS |
+| 요청 헤더 | Authorization, Content-Type, Accept |
+| preflight | 허용 Origin이면 인증 없이 처리. 미허용 Origin은 403, CORS 헤더 없음 |
+| Origin 헤더 없는 요청 | 영향 없음(앱, 수집기, curl) |
+
+Vercel 프리뷰 URL(`*.vercel.app` 해시 배포)은 와일드카드를 쓸 수 없으므로 허용되지 않는다.
+쓰려면 그 URL을 정확히 추가한다. 운영은 고정 도메인 하나를 권장한다.
+
+**CORS는 접근 통제가 아니다.** curl 같은 비브라우저 클라이언트는 CORS를 무시한다.
+접근 통제는 JWT + ADMIN 역할 검사가 하고, 공개 시연에서는 아래 가입 차단이 추가로 필요하다.
+
+### 공개 시연 보안: `BAPPLANNER_DEMO_DISABLE_SIGNUP=true` 필수
+
+`SMS_MODE=noop` 이면 send-code 응답에 인증번호(`developmentCode`)가 실려, 누구나
+가입할 수 있다. 공개 배포에서는 `BAPPLANNER_DEMO_DISABLE_SIGNUP=true` 로 세 경로
+(`send-code`, `verify`, `signup`)를 서버에서 막는다. `login`, `refresh` 와 기존
+관리자 계정은 그대로 동작한다. 설정을 빠뜨리면 기존 동작(가입 허용)이므로 **공개
+배포 체크리스트에 반드시 포함**한다.
+
+### Naver Cloud `/opt/bapplanner/.env` 에 필요한 값
+
+값은 서버에서만 채우고 저장소에 커밋하지 않는다.
+
+```
+DB_URL=...                         # 기존 값 유지
+DB_USERNAME=...
+DB_PASSWORD=...
+JWT_SIGNING_KEY=...                # 32바이트 이상
+PHONE_VERIFICATION_HMAC_KEY=...    # JWT 키와 다른 값
+BAPPLANNER_BUSINESS_ZONE_ID=Asia/Seoul
+BAPPLANNER_INTERNAL_SERVICE_TOKEN=...
+SMS_MODE=noop
+SPRING_PROFILES_ACTIVE=dev         # 기존 배포 그대로
+# --- 이번에 추가 ---
+BAPPLANNER_CORS_ALLOWED_ORIGINS=https://<관리자>.vercel.app
+BAPPLANNER_DEMO_DISABLE_SIGNUP=true
+```
+
+### Vercel 쪽
+
+- 환경변수 `VITE_API_BASE_URL=https://api.<도메인>` (비밀 값 아님. `VITE_*` 는 번들에 노출된다).
+- 관리자 웹은 `/api/v1/**` 를 이 base URL 뒤에 붙여 호출한다. 값 변경 후 재배포한다.
+
+### 확인
+
+```
+# 허용 Origin: 200 + access-control-allow-origin 이 Origin과 동일
+curl -i -X OPTIONS https://api.<도메인>/api/v1/auth/login   -H 'Origin: https://<관리자>.vercel.app'   -H 'Access-Control-Request-Method: POST'   -H 'Access-Control-Request-Headers: authorization,content-type'
+# 미허용 Origin: 403, access-control-allow-origin 없음
+# 가입 차단: POST /api/v1/auth/signup → 403 FORBIDDEN
+```

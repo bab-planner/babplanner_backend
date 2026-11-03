@@ -34,6 +34,14 @@ bapplanner:
   # 기본값을 두지 않는다. 값이 없으면 기동에 실패한다.
   internal:
     service-token: ${BAPPLANNER_INTERNAL_SERVICE_TOKEN:}
+  # 브라우저(관리자 웹)가 /api/v1/** 를 부를 수 있는 Origin. 쉼표 구분, 정확히 일치하는
+  # https://host[:port] 만 허용. 기본은 빈 목록(브라우저 cross-origin 전부 거절).
+  cors:
+    allowed-origins: ${BAPPLANNER_CORS_ALLOWED_ORIGINS:}
+  # 공개 시연 배포용. true면 휴대폰 인증/회원가입 경로를 403으로 막는다.
+  # 기본 false(기존 동작). SMS_MODE=noop 으로 공개 배포할 때는 반드시 true.
+  demo:
+    disable-signup: ${BAPPLANNER_DEMO_DISABLE_SIGNUP:false}
   # AI 서비스(FastAPI) 호출 설정. 잔반/수요/발주가 같은 프로세스이므로
   # 주소와 토큰도 하나만 둔다. 이 토큰은 위 internal 토큰과 다른 값이다.
   ai:
